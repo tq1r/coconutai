@@ -15,7 +15,7 @@ interface AuthInputProps {
 export const AuthInput: React.FC<AuthInputProps> = ({ label, type, placeholder, value, onChange, error, required = true }) => {
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium text-neutral-300 mb-2">
+      <label className="block text-sm font-medium text-sand-300 mb-2">
         {label}{required && <span className="text-rose-400 ml-1">*</span>}
       </label>
       <input
@@ -23,8 +23,8 @@ export const AuthInput: React.FC<AuthInputProps> = ({ label, type, placeholder, 
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className={`w-full px-4 py-2.5 rounded-lg border bg-neutral-800 text-white placeholder-neutral-500 ${
-          error ? 'border-rose-500' : 'border-neutral-600'
+        className={`w-full px-4 py-2.5 rounded-lg border bg-[#0d0b0a] text-white placeholder-sand-500 ${
+          error ? 'border-rose-500' : 'border-[#2a2620]'
         } focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all`}
         required={required}
       />

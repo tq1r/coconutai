@@ -232,22 +232,22 @@ export default function DashboardPage() {
   return (
     <>
       {/* Top Navbar */}
-      <header className="flex items-center justify-between px-4 h-11 bg-[#0d0d14] border-b border-[#1e1e2a] flex-shrink-0">
+      <header className="flex items-center justify-between px-4 h-11 bg-[#0d0b0a] border-b border-[#2a2620] flex-shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-lg">🥥</span>
-          <span className="font-semibold text-sm text-cyan-300">Coconut AI</span>
-          <span className="text-[#3a3a4a]">|</span>
+          <span className="font-semibold text-sm text-cyan-400">Coconut AI</span>
+          <span className="text-[#3a3428]">|</span>
           <select
             value={workspaceName}
             onChange={(e) => fetchWorkspaceSession(e.target.value)}
-            className="bg-transparent text-xs text-[#8888a0] border border-[#2a2a3a] rounded px-2 py-1 outline-none"
+            className="bg-transparent text-xs text-sand-400 border border-[#2a2620] rounded px-2 py-1 outline-none"
           >
             {workspaces.length ? workspaces.map((w) => (
               <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>
             )) : <option value={DEFAULT_WORKSPACE}>{DEFAULT_WORKSPACE}</option>}
           </select>
         </div>
-        <div className="flex items-center gap-3 text-xs text-[#6666a0]">
+        <div className="flex items-center gap-3 text-xs text-sand-500">
           {robloxStatus && <span className="text-emerald-400">{robloxStatus}</span>}
           <a
             href="/api/auth/roblox"
@@ -259,8 +259,8 @@ export default function DashboardPage() {
           </a>
           <span className={`w-2 h-2 rounded-full ${syncStatus === 'Connected' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
           <span>{syncStatus}</span>
-          <span className="text-[#3a3a4a]">|</span>
-          <span>{userName}</span>
+          <span className="text-[#3a3428]">|</span>
+          <span className="text-sand-300">{userName}</span>
         </div>
       </header>
 
@@ -268,19 +268,19 @@ export default function DashboardPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* File Explorer Sidebar */}
         {showExplorer && (
-          <aside className="w-56 bg-[#0d0d14] border-r border-[#1e1e2a] flex flex-col flex-shrink-0">
-            <div className="flex items-center justify-between px-3 h-9 text-xs text-[#6666a0] border-b border-[#1e1e2a]">
+          <aside className="w-56 bg-[#0d0b0a] border-r border-[#2a2620] flex flex-col flex-shrink-0">
+            <div className="flex items-center justify-between px-3 h-9 text-xs text-sand-500 border-b border-[#2a2620]">
               <span>EXPLORER</span>
               <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="text-cyan-400 hover:text-cyan-300">+</button>
             </div>
             {showNewFileInput && (
-              <div className="p-2 border-b border-[#1e1e2a]">
+              <div className="p-2 border-b border-[#2a2620]">
                 <input
                   value={newFileName}
                   onChange={(e) => setNewFileName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)}
                   placeholder="script.lua"
-                  className="w-full bg-[#15151f] text-xs text-white border border-[#2a2a3a] rounded px-2 py-1 outline-none"
+                  className="w-full bg-[#1a1815] text-xs text-white border border-[#2a2620] rounded px-2 py-1 outline-none"
                   autoFocus
                 />
               </div>
@@ -307,7 +307,7 @@ export default function DashboardPage() {
                     }
                   }}
                   className={`w-full text-left px-2 py-1 rounded text-xs transition-colors ${
-                    activeProjectId === project.id ? 'bg-cyan-900/30 text-cyan-300' : 'text-[#8888a0] hover:bg-[#15151f]'
+                    activeProjectId === project.id ? 'bg-cyan-900/30 text-cyan-300' : 'text-sand-400 hover:bg-[#1a1815]'
                   }`}
                 >
                   <span className="mr-2">{project.name.endsWith('.lua') ? '📄' : '📁'}</span>
@@ -315,7 +315,7 @@ export default function DashboardPage() {
                 </button>
               ))}
               {projects.length === 0 && (
-                <p className="text-xs text-[#5555] text-center mt-4">No files yet</p>
+                <p className="text-xs text-sand-500 text-center mt-4">No files yet</p>
               )}
             </div>
           </aside>
@@ -332,26 +332,26 @@ export default function DashboardPage() {
 
         {/* AI Chat Panel */}
         {showChat && (
-          <aside className="w-80 bg-[#0d0d14] border-l border-[#1e1e2a] flex flex-col flex-shrink-0">
-            <div className="flex items-center justify-between px-3 h-9 text-xs text-[#6666a0] border-b border-[#1e1e2a]">
+          <aside className="w-80 bg-[#0d0b0a] border-l border-[#2a2620] flex flex-col flex-shrink-0">
+            <div className="flex items-center justify-between px-3 h-9 text-xs text-sand-500 border-b border-[#2a2620]">
               <span>AI ASSISTANT</span>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="bg-transparent text-cyan-300 border border-[#2a2a3a] rounded px-1.5 py-0.5 text-[10px] outline-none"
+                className="bg-transparent text-cyan-400 border border-[#2a2620] rounded px-1.5 py-0.5 text-[10px] outline-none"
               >
                 {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {chatHistory.length === 0 && (
-                <div className="text-xs text-[#5555] text-center mt-8">
-                  <p className="text-cyan-400 text-base mb-2">🤖</p>
+                <div className="text-xs text-sand-500 text-center mt-8">
+                  <p className="text-cyan-400 text-base mb-2">🏝️</p>
                   <p>Ask AI to generate Roblox scripts, UI, or game systems.</p>
                 </div>
               )}
               {chatHistory.map((msg, i) => (
-                <div key={i} className={`text-xs leading-relaxed ${msg.role === 'assistant' ? 'text-[#c0c0d0]' : 'text-[#7070a0]'}`}>
+                <div key={i} className={`text-xs leading-relaxed ${msg.role === 'assistant' ? 'text-sand-200' : 'text-sand-400'}`}>
                   <div className="font-semibold mb-1 text-[10px] uppercase tracking-wider">
                     {msg.role === 'assistant' ? 'Coconut AI' : 'You'}
                   </div>
@@ -368,7 +368,7 @@ export default function DashboardPage() {
               ))}
               <div ref={chatEndRef} />
             </div>
-            <div className="p-3 border-t border-[#1e1e2a]">
+            <div className="p-3 border-t border-[#2a2620]">
               {error && <p className="text-[10px] text-rose-400 mb-2">{error}</p>}
               <textarea
                 rows={3}
@@ -376,12 +376,12 @@ export default function DashboardPage() {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
                 placeholder="Describe the script or system you want..."
-                className="w-full resize-none bg-[#15151f] text-xs text-white border border-[#2a2a3a] rounded-lg px-3 py-2 outline-none placeholder-[#5555]"
+                className="w-full resize-none bg-[#1a1815] text-xs text-white border border-[#2a2620] rounded-lg px-3 py-2 outline-none placeholder-sand-500"
               />
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="mt-2 w-full py-1.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-xs font-medium rounded-lg transition-colors"
+                className="mt-2 w-full py-1.5 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 disabled:opacity-50 text-xs font-medium rounded-lg transition-all"
               >
                 {isGenerating ? 'Generating...' : 'Generate'}
               </button>
@@ -391,17 +391,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Status Bar */}
-      <footer className="flex items-center justify-between px-4 h-6 bg-[#0d0d14] border-t border-[#1e1e2a] flex-shrink-0">
-        <div className="flex items-center gap-4 text-[10px] text-[#5555]">
-          <button onClick={() => setShowExplorer(!showExplorer)} className="hover:text-white transition-colors">
+      <footer className="flex items-center justify-between px-4 h-6 bg-[#0d0b0a] border-t border-[#2a2620] flex-shrink-0">
+        <div className="flex items-center gap-4 text-[10px] text-sand-500">
+          <button onClick={() => setShowExplorer(!showExplorer)} className="hover:text-sand-200 transition-colors">
             {showExplorer ? 'Hide Explorer' : 'Show Explorer'}
           </button>
           <span>Ln 1, Col 1</span>
           <span>Lua</span>
         </div>
-        <div className="flex items-center gap-4 text-[10px] text-[#5555]">
+        <div className="flex items-center gap-4 text-[10px] text-sand-500">
           <span>Model: {models.find((m) => m.id === selectedModel)?.name || 'GPT-4o'}</span>
-          <button onClick={() => setShowChat(!showChat)} className="hover:text-white transition-colors">
+          <button onClick={() => setShowChat(!showChat)} className="hover:text-sand-200 transition-colors">
             {showChat ? 'Hide Chat' : 'Show Chat'}
           </button>
         </div>
