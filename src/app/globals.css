@@ -56,7 +56,8 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-body { overflow-x: hidden; }
+body { overflow-x: hidden; overflow-y: hidden; }
+#__next, [data-nextjs-root] { height: 100%; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f5f0ea; }

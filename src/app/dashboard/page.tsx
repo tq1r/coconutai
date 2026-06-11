@@ -200,62 +200,71 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen flex flex-col bg-gradient-to-br from-sky-50 via-white to-sand-50">
+      <div className="h-screen flex flex-col bg-gradient-to-br from-sky-50 via-white to-sand-50 overflow-hidden">
         {/* Navbar */}
-        <header className="flex items-center justify-between px-5 h-12 bg-white/70 backdrop-blur-md border-b border-sand-100/50 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-xl drop-shadow-sm">🥥</span>
-            <span className="font-bold text-base bg-gradient-to-r from-ocean-500 to-teal-400 bg-clip-text text-transparent">Coconut AI</span>
-            <span className="text-sand-200/50 text-sm">|</span>
-            <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="bg-white/60 text-sm text-stone-500 border border-sand-100 rounded-xl px-3 py-1.5 outline-none shadow-sm backdrop-blur-sm">
-              {workspaces.length ? workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>) : <option>{DEFAULT_WORKSPACE}</option>}
+        <header className="flex items-center gap-2 px-3 sm:px-5 h-11 bg-white/70 backdrop-blur-md border-b border-sand-100/50 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0">
+            <span className="text-lg sm:text-xl drop-shadow-sm flex-shrink-0">🥥</span>
+            <span className="font-bold text-sm sm:text-base bg-gradient-to-r from-ocean-500 to-teal-400 bg-clip-text text-transparent whitespace-nowrap">Coconut AI</span>
+            <span className="text-sand-200/50 text-xs hidden sm:inline">|</span>
+            <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="bg-white/60 text-xs sm:text-sm text-stone-500 border border-sand-100 rounded-xl px-2 sm:px-3 py-1 outline-none shadow-sm backdrop-blur-sm max-w-[120px] sm:max-w-[200px] truncate">
+              {workspaces.length ? workspaces.map((w) => <option key={w.id} value={w.workspace_name} className="truncate">{w.workspace_name}</option>) : <option className="truncate">{DEFAULT_WORKSPACE}</option>}
             </select>
           </div>
-          <div className="flex items-center gap-2 text-xs text-stone-400">
+
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-stone-400 min-w-0">
             {/* Studio Sync */}
-            <div className="flex items-center gap-1.5 bg-white/50 border border-sand-100 rounded-xl px-2.5 py-1 shadow-sm">
-              <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Studio</span>
-              <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Code" className="w-14 bg-transparent text-xs text-stone-700 outline-none uppercase placeholder-stone-300" maxLength={6} />
+            <div className="flex items-center gap-1 bg-white/50 border border-sand-100 rounded-xl px-2 py-1 shadow-sm">
+              <span className="hidden sm:inline text-[9px] sm:text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Studio</span>
+              <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Code" className="w-12 sm:w-14 bg-transparent text-[10px] sm:text-xs text-stone-700 outline-none uppercase placeholder-stone-300" maxLength={6} />
               {pluginStatus ? (
-                <span className="text-[10px] text-ocean-500 font-medium whitespace-nowrap">{pluginStatus}</span>
+                <span className="text-[9px] sm:text-[10px] text-ocean-500 font-medium whitespace-nowrap">{pluginStatus}</span>
               ) : (
-                <span className={`w-1.5 h-1.5 rounded-full ${pluginCode.trim().length === 6 ? 'bg-ocean-400' : 'bg-stone-200'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${pluginCode.trim().length === 6 ? 'bg-ocean-400' : 'bg-stone-200'}`} />
               )}
             </div>
-            {robloxStatus && <span className="text-ocean-500 bg-ocean-50 px-2 py-0.5 rounded-lg">{robloxStatus}</span>}
-            <a href="/api/auth/roblox" className={`px-2 py-1 rounded-xl text-xs font-medium transition-all shadow-sm ${robloxLinked ? 'bg-ocean-50 text-ocean-600 border border-ocean-100' : 'bg-white/60 text-sand-500 border border-sand-200 hover:bg-sand-50'}`}>
-              {robloxLinked ? `🔗 ${robloxUsername}` : 'Link Roblox'}
+
+            {robloxStatus && <span className="text-ocean-500 bg-ocean-50 px-1.5 sm:px-2 py-0.5 rounded-lg hidden sm:inline">{robloxStatus}</span>}
+
+            <a href="/api/auth/roblox" className={`px-1.5 sm:px-2 py-1 rounded-xl font-medium transition-all shadow-sm whitespace-nowrap ${robloxLinked ? 'bg-ocean-50 text-ocean-600 border border-ocean-100' : 'bg-white/60 text-sand-500 border border-sand-200 hover:bg-sand-50'}`}>
+              {robloxLinked ? `🔗 ${robloxUsername}` : 'Link'}
             </a>
-            <span className={`w-1.5 h-1.5 rounded-full shadow-sm ${syncStatus === 'Connected' ? 'bg-ocean-400' : 'bg-coral-400'}`} />
-            <span className="text-[10px]">{syncStatus}</span>
-            <span className="text-sand-200/50 text-sm">|</span>
-            {userRole === 'premium' && <span className="text-[10px] bg-gradient-to-r from-amber-200 to-amber-400 text-amber-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ PREMIUM</span>}
-            {userRole === 'admin' && <span className="text-[10px] bg-gradient-to-r from-coral-200 to-coral-400 text-coral-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ ADMIN</span>}
-            {!userRole || userRole === 'user' ? (
+
+            <span className={`w-1.5 h-1.5 rounded-full shadow-sm flex-shrink-0 ${syncStatus === 'Connected' ? 'bg-ocean-400' : 'bg-coral-400'}`} />
+            <span className="hidden sm:inline">{syncStatus}</span>
+            <span className="text-sand-200/50 text-xs hidden sm:inline">|</span>
+
+            {/* Role badge */}
+            {userRole === 'premium' && <span className="bg-gradient-to-r from-amber-200 to-amber-400 text-amber-800 px-1.5 sm:px-2 py-0.5 rounded-lg font-semibold shadow-sm whitespace-nowrap">✦ PREMIUM</span>}
+            {userRole === 'admin' && <span className="bg-gradient-to-r from-coral-200 to-coral-400 text-coral-800 px-1.5 sm:px-2 py-0.5 rounded-lg font-semibold shadow-sm whitespace-nowrap">✦ ADMIN</span>}
+            {(!userRole || userRole === 'user') && (
               <button onClick={async () => {
                 const r = await fetch('/api/admin/set-premium'); const d = await r.json();
-                if (d.success) { setUserRole('premium'); setPluginStatus('✨ Upgraded!'); setTimeout(() => setPluginStatus(''), 3000); }
-              }} className="text-[10px] bg-gradient-to-r from-amber-200 to-amber-300 text-amber-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer border-0">✦ Upgrade</button>
-            ) : null}
-            <span className="text-stone-600 font-medium bg-white/40 px-2 py-1 rounded-xl border border-sand-100 shadow-sm text-[11px]">{userName}</span>
+                if (d.success) { setUserRole('premium'); setPluginStatus('✨ Premium!'); setTimeout(() => setPluginStatus(''), 3000); }
+              }} className="bg-gradient-to-r from-amber-200 to-amber-300 text-amber-800 px-1.5 sm:px-2 py-0.5 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer border-0 text-[10px] sm:text-xs whitespace-nowrap">✦ Upgrade</button>
+            )}
+
+            <span className="text-stone-600 font-medium bg-white/40 px-1.5 sm:px-2 py-1 rounded-xl border border-sand-100 shadow-sm truncate max-w-[60px] sm:max-w-[120px]">{userName}</span>
           </div>
         </header>
 
         {/* IDE Body */}
-        <div className="flex flex-1 overflow-hidden gap-0.5 p-0.5">
+        <div className="flex flex-1 overflow-hidden gap-0.5 p-0.5 min-h-0">
           {/* Explorer */}
           {showExplorer && (
-            <aside className="w-52 bg-white/60 backdrop-blur-sm border border-sand-100/80 rounded-2xl m-1 flex flex-col flex-shrink-0 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 h-9 text-xs text-stone-400 border-b border-sand-100/50 bg-white/40">
-                <span className="font-semibold text-stone-500 tracking-wide">📁 EXPLORER</span>
-                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="text-ocean-400 hover:text-ocean-500 text-sm bg-white/60 w-5 h-5 rounded-full flex items-center justify-center shadow-sm transition-all hover:shadow-md">+</button>
+            <aside className="w-44 sm:w-48 lg:w-52 bg-white/60 backdrop-blur-sm border border-sand-100/80 rounded-2xl m-1 flex flex-col flex-shrink-0 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-3 sm:px-4 h-8 sm:h-9 text-xs text-stone-400 border-b border-sand-100/50 bg-white/40">
+                <span className="font-semibold text-stone-500 tracking-wide text-[10px] sm:text-xs">📁 EXPLORER</span>
+                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="text-ocean-400 hover:text-ocean-500 text-sm bg-white/60 w-5 h-5 rounded-full flex items-center justify-center shadow-sm transition-all hover:shadow-md flex-shrink-0">+</button>
               </div>
               {showNewFileInput && (
-                <div className="p-2 border-b border-sand-100/50">
-                  <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full bg-white/80 text-sm text-stone-700 border border-sand-200 rounded-xl px-3 py-1.5 outline-none placeholder-stone-300 shadow-sm" autoFocus />
+                <div className="p-1.5 sm:p-2 border-b border-sand-100/50">
+                  <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full bg-white/80 text-xs sm:text-sm text-stone-700 border border-sand-200 rounded-xl px-2 sm:px-3 py-1 outline-none placeholder-stone-300 shadow-sm" autoFocus />
                 </div>
               )}
-              <div className="flex-1 overflow-y-auto py-1.5 px-1.5 space-y-0.5">
+              <div className="flex-1 overflow-y-auto py-1 px-1 sm:px-1.5 space-y-0.5">
                 {projects.map((project) => (
                   <button key={project.id} onClick={() => {
                     setActiveProjectId(project.id);
@@ -265,17 +274,17 @@ export default function DashboardPage() {
                       const newFile: ScriptFile = { id: project.id, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId: project.id, updatedAt: new Date().toISOString() };
                       setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
                     }
-                  }} className={`w-full text-left px-3 py-2 text-sm rounded-xl transition-all ${activeProjectId === project.id ? 'bg-gradient-to-r from-ocean-50 to-teal-50 text-ocean-600 font-medium shadow-sm border border-ocean-100' : 'text-stone-500 hover:bg-white/60 hover:shadow-sm border border-transparent'}`}>
-                    <span className="mr-1.5">📄</span> {project.name}.lua
+                  }} className={`w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl transition-all truncate ${activeProjectId === project.id ? 'bg-gradient-to-r from-ocean-50 to-teal-50 text-ocean-600 font-medium shadow-sm border border-ocean-100' : 'text-stone-500 hover:bg-white/60 hover:shadow-sm border border-transparent'}`}>
+                    📄 {project.name}.lua
                   </button>
                 ))}
-                {projects.length === 0 && <p className="text-xs text-stone-300 text-center mt-8">No files yet<br /><span className="text-stone-200">Click + to create one</span></p>}
+                {projects.length === 0 && <p className="text-xs text-stone-300 text-center mt-6 sm:mt-8 px-2">No files yet<br /><span className="text-stone-200">Click + to create</span></p>}
               </div>
             </aside>
           )}
 
           {/* Editor */}
-          <main className="flex-1 flex flex-col overflow-hidden m-1">
+          <main className="flex-1 flex flex-col overflow-hidden m-1 min-w-0">
             <div className="flex-1 bg-white/80 backdrop-blur-sm border border-sand-100/80 rounded-2xl overflow-hidden shadow-sm">
               <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
             </div>
@@ -283,35 +292,35 @@ export default function DashboardPage() {
 
           {/* Chat */}
           {showChat && (
-            <aside className="w-80 bg-white/60 backdrop-blur-sm border border-sand-100/80 rounded-2xl m-1 flex flex-col flex-shrink-0 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 h-9 text-xs text-stone-400 border-b border-sand-100/50 bg-white/40">
-                <span className="font-semibold text-stone-500 tracking-wide">🤖 AI ASSISTANT</span>
-                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="bg-white/80 text-ocean-500 border border-sand-100 rounded-xl px-2 py-1 text-xs outline-none shadow-sm">
+            <aside className="w-64 sm:w-72 lg:w-80 bg-white/60 backdrop-blur-sm border border-sand-100/80 rounded-2xl m-1 flex flex-col flex-shrink-0 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-3 sm:px-4 h-8 sm:h-9 text-xs text-stone-400 border-b border-sand-100/50 bg-white/40">
+                <span className="font-semibold text-stone-500 tracking-wide text-[10px] sm:text-xs">🤖 AI</span>
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="bg-white/80 text-ocean-500 border border-sand-100 rounded-xl px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs outline-none shadow-sm max-w-[100px] sm:max-w-[140px] truncate">
                   {models.map((m) => <option key={m.id} value={m.id}>{m.name} {m.premium ? '✦' : '⊙'}</option>)}
                 </select>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3">
                 {chatHistory.length === 0 ? (
-                  <div className="text-sm text-stone-400 text-center mt-10">
-                    <p className="text-4xl mb-3 drop-shadow-sm">🏝️</p>
+                  <div className="text-xs sm:text-sm text-stone-400 text-center mt-6 sm:mt-10">
+                    <p className="text-2xl sm:text-4xl mb-2 sm:mb-3 drop-shadow-sm">🏝️</p>
                     <p className="text-stone-400 font-medium">Ask AI to generate Roblox</p>
                     <p className="text-stone-300">scripts, UI, or game systems</p>
                   </div>
                 ) : chatHistory.map((msg, i) => (
-                  <div key={i} className={`text-sm leading-relaxed ${msg.role === 'assistant' ? 'text-stone-700 bg-white/60 rounded-xl p-3 border border-sand-100/50 shadow-sm' : 'text-stone-400'}`}>
-                    <div className="font-semibold mb-1 text-xs uppercase tracking-wider">{msg.role === 'assistant' ? '🤖 Coconut AI' : 'You'}</div>
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{msg.text}</pre>
+                  <div key={i} className={`text-xs sm:text-sm leading-relaxed ${msg.role === 'assistant' ? 'text-stone-700 bg-white/60 rounded-xl p-2 sm:p-3 border border-sand-100/50 shadow-sm' : 'text-stone-400'}`}>
+                    <div className="font-semibold mb-1 text-[10px] sm:text-xs uppercase tracking-wider">{msg.role === 'assistant' ? '🤖 Coconut AI' : 'You'}</div>
+                    <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm">{msg.text}</pre>
                     {msg.role === 'assistant' && msg.text.includes('function') && (
-                      <button onClick={() => applyCodeFromChat(msg.text)} className="mt-1.5 text-xs bg-gradient-to-r from-ocean-400 to-teal-400 text-white px-3 py-1 rounded-lg font-medium shadow-sm hover:shadow-md transition-all">Apply to editor</button>
+                      <button onClick={() => applyCodeFromChat(msg.text)} className="mt-1 text-[10px] sm:text-xs bg-gradient-to-r from-ocean-400 to-teal-400 text-white px-2 sm:px-3 py-1 rounded-lg font-medium shadow-sm hover:shadow-md transition-all">Apply</button>
                     )}
                   </div>
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-4 border-t border-sand-100/50 bg-white/40">
-                {error && <p className="text-xs text-coral-500 mb-2 font-medium">{error}</p>}
-                <textarea rows={2} value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())} placeholder="Describe the script or system you want..." className="w-full resize-none bg-white/90 text-sm text-stone-700 border border-sand-200 rounded-xl px-4 py-2.5 outline-none placeholder-stone-300 shadow-sm" />
-                <button onClick={handleGenerate} disabled={isGenerating} className="mt-2 w-full py-2.5 bg-gradient-to-r from-ocean-400 to-teal-400 hover:from-ocean-500 hover:to-teal-500 disabled:opacity-50 text-sm font-semibold rounded-xl text-white transition-all shadow-md hover:shadow-lg">
+              <div className="p-2 sm:p-3 lg:p-4 border-t border-sand-100/50 bg-white/40">
+                {error && <p className="text-[10px] sm:text-xs text-coral-500 mb-1.5 sm:mb-2 font-medium">{error}</p>}
+                <textarea rows={2} value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())} placeholder="Describe the script or system you want..." className="w-full resize-none bg-white/90 text-xs sm:text-sm text-stone-700 border border-sand-200 rounded-xl px-3 sm:px-4 py-2 outline-none placeholder-stone-300 shadow-sm" />
+                <button onClick={handleGenerate} disabled={isGenerating} className="mt-1.5 sm:mt-2 w-full py-2 sm:py-2.5 bg-gradient-to-r from-ocean-400 to-teal-400 hover:from-ocean-500 hover:to-teal-500 disabled:opacity-50 text-xs sm:text-sm font-semibold rounded-xl text-white transition-all shadow-md hover:shadow-lg">
                   {isGenerating ? '🌊 Generating...' : '🌴 Generate'}
                 </button>
               </div>
@@ -320,16 +329,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Status Bar */}
-        <footer className="flex items-center justify-between px-5 h-7 bg-white/40 backdrop-blur-sm border-t border-sand-100/50 flex-shrink-0">
-          <div className="flex items-center gap-4 text-[10px] text-stone-400">
-            <button onClick={() => setShowExplorer(!showExplorer)} className="hover:text-ocean-500 transition-colors px-2 py-0.5 rounded-lg hover:bg-white/40">{showExplorer ? '📁 Hide' : '📁 Show'}</button>
-            <span>Ln 1</span>
-            <span className="text-sand-200">|</span>
-            <span>Lua</span>
+        <footer className="flex items-center justify-between px-2 sm:px-5 h-6 sm:h-7 bg-white/40 backdrop-blur-sm border-t border-sand-100/50 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-[10px] text-stone-400">
+            <button onClick={() => setShowExplorer(!showExplorer)} className="hover:text-ocean-500 transition-colors px-1.5 sm:px-2 py-0.5 rounded-lg hover:bg-white/40 whitespace-nowrap">{showExplorer ? '📁 Hide' : '📁 Show'}</button>
+            <span className="hidden sm:inline">Ln 1</span>
+            <span className="text-sand-200 hidden sm:inline">|</span>
+            <span className="hidden sm:inline">Lua</span>
           </div>
-          <div className="flex items-center gap-4 text-[10px] text-stone-400">
-            <span className="text-stone-300">✦ Premium &nbsp;⊙ Free</span>
-            <button onClick={() => setShowChat(!showChat)} className="hover:text-ocean-500 transition-colors px-2 py-0.5 rounded-lg hover:bg-white/40">{showChat ? '🤖 Hide' : '🤖 Show'}</button>
+          <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-[10px] text-stone-400">
+            <span className="hidden sm:inline">✦ Premium ⊙ Free</span>
+            <button onClick={() => setShowChat(!showChat)} className="hover:text-ocean-500 transition-colors px-1.5 sm:px-2 py-0.5 rounded-lg hover:bg-white/40 whitespace-nowrap">{showChat ? '🤖 Hide' : '🤖 Show'}</button>
           </div>
         </footer>
       </div>
