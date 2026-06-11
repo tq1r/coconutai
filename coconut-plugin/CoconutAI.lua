@@ -18,7 +18,7 @@ local toolbar = plugin:CreateToolbar(PLUGIN_NAME)
 local toggleButton = toolbar:CreateButton(
 	PLUGIN_NAME,
 	"Toggle Coconut AI panel - AI-powered Roblox scripting",
-	""
+	"rbxassetid://0"
 )
 
 -- Color palette
