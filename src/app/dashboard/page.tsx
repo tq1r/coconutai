@@ -231,6 +231,12 @@ export default function DashboardPage() {
             <span className="text-sand-200/50 text-sm">|</span>
             {userRole === 'premium' && <span className="text-[10px] bg-gradient-to-r from-amber-200 to-amber-400 text-amber-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ PREMIUM</span>}
             {userRole === 'admin' && <span className="text-[10px] bg-gradient-to-r from-coral-200 to-coral-400 text-coral-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ ADMIN</span>}
+            {!userRole || userRole === 'user' ? (
+              <button onClick={async () => {
+                const r = await fetch('/api/admin/set-premium'); const d = await r.json();
+                if (d.success) { setUserRole('premium'); setPluginStatus('✨ Upgraded!'); setTimeout(() => setPluginStatus(''), 3000); }
+              }} className="text-[10px] bg-gradient-to-r from-amber-200 to-amber-300 text-amber-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer border-0">✦ Upgrade</button>
+            ) : null}
             <span className="text-stone-600 font-medium bg-white/40 px-2 py-1 rounded-xl border border-sand-100 shadow-sm text-[11px]">{userName}</span>
           </div>
         </header>

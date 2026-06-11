@@ -45,14 +45,14 @@ export async function signUpWithEmail(
   };
 }
 
-export async function signInWithEmail(email: string, password: string) {
+export async function signInWithEmail(email: string, password: string, rememberMe = false) {
   const row = await findProfileByEmail(email);
   if (!row) return { success: false, error: 'Invalid email or password' };
 
   const valid = await verifyPassword(password, row.password_hash);
   if (!valid) return { success: false, error: 'Invalid email or password' };
 
-  const token = await createToken({ userId: row.id, email: row.email, role: row.role });
+  const token = await createToken({ userId: row.id, email: row.email, role: row.role }, rememberMe);
   return {
     success: true,
     user: { id: row.id, email: row.email, username: row.username, display_name: row.display_name, role: row.role },

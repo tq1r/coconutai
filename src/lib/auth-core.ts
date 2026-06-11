@@ -19,11 +19,11 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export async function createToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): Promise<string> {
+export async function createToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, rememberMe = false): Promise<string> {
   return new SignJWT({ ...payload } as unknown as JWTPayload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime(rememberMe ? '30d' : '1d')
     .sign(JWT_SECRET);
 }
 

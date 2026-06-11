@@ -10,6 +10,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +18,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, rememberMe }),
+      });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Login failed'); return; }
       router.push('/dashboard');
@@ -29,11 +33,15 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit}>
         <AuthInput label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         <AuthInput label="Password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div className="flex items-center justify-between mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 rounded border-sand-200 text-ocean-500 focus:ring-ocean-200 cursor-pointer" />
+            <span className="text-xs text-stone-500">Remember me</span>
+          </label>
+          <Link href="/auth/reset-password" className="text-xs text-stone-400 hover:text-ocean-500 no-underline">Forgot password?</Link>
+        </div>
         {error && <p className="text-coral-500 text-sm mb-3">{error}</p>}
         <AuthButton isLoading={loading}>Sign In</AuthButton>
-        <div className="mt-4 text-center">
-          <Link href="/auth/reset-password" className="text-sm text-stone-400 hover:text-ocean-500 no-underline">Forgot password?</Link>
-        </div>
       </form>
     </AuthLayout>
   );
