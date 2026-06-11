@@ -1,192 +1,432 @@
--- Coconut AI Studio Plugin
--- Place in %localappdata%/Roblox/Plugins/ or install via Studio
+--[[
+	Coconut AI Studio Plugin
+	Version 1.0.0
+	
+	Installation:
+	1. Save this file to: %localappdata%/Roblox/Plugins/CoconutAI.lua
+	2. Restart Roblox Studio
+	3. Find "Coconut AI" in the Plugins tab
+	
+	For updates, visit: https://coconutai.vercel.app
+--]]
 
-local plugin = script.Parent
-local toolbar = plugin:CreateToolbar("Coconut AI")
-local toggleBtn = toolbar:CreateButton("Coconut AI", "Toggle Coconut AI panel", "rbxassetid://0")
+local PLUGIN_NAME = "Coconut AI"
+local API_BASE = "https://coconutai.vercel.app/api/plugin"
 
-local dockWidget = plugin:CreateDockWidgetPluginGui(
-	"CoconutAI",
-	DockWidgetPluginGuiInfo.new(
-		Enum.InitialDockState.Float,
-		true, false, 300, 400
-	)
+local plugin = Plugin()
+local toolbar = plugin:CreateToolbar(PLUGIN_NAME)
+local toggleButton = toolbar:CreateButton(
+	PLUGIN_NAME,
+	"Toggle Coconut AI panel - AI-powered Roblox scripting",
+	""
 )
-dockWidget.Title = "Coconut AI"
 
--- UI
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 1, 0)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-frame.Parent = dockWidget
+-- Color palette
+local COLORS = {
+	primary = Color3.fromRGB(20, 184, 166),
+	primaryDark = Color3.fromRGB(13, 148, 136),
+	primaryLight = Color3.fromRGB(45, 212, 191),
+	bg = Color3.fromRGB(248, 250, 250),
+	bgDark = Color3.fromRGB(30, 32, 35),
+	surface = Color3.fromRGB(255, 255, 255),
+	surfaceDark = Color3.fromRGB(38, 40, 45),
+	text = Color3.fromRGB(41, 37, 36),
+	textSecondary = Color3.fromRGB(120, 113, 108),
+	textMuted = Color3.fromRGB(168, 162, 158),
+	success = Color3.fromRGB(52, 211, 153),
+	error = Color3.fromRGB(248, 113, 113),
+	warning = Color3.fromRGB(251, 191, 36),
+	border = Color3.fromRGB(230, 225, 220),
+}
 
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 8)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout.VerticalAlignment = Enum.VerticalAlignment.Top
-layout.Parent = frame
+-- Create dock widget
+local dockWidgetInfo = DockWidgetPluginGuiInfo.new(
+	Enum.InitialDockState.Float,
+	false, false,
+	340, 500,
+	340, 500
+)
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -16, 0, 32)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "🥥 Coconut AI"
-titleLabel.TextColor3 = Color3.fromRGB(45, 212, 191)
-titleLabel.TextSize = 18
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Parent = frame
+local widget = plugin:CreateDockWidgetPluginGui(PLUGIN_NAME, dockWidgetInfo)
+widget.Title = "🥥 Coconut AI"
 
--- Session code display
-local codeLabel = Instance.new("TextLabel")
-codeLabel.Size = UDim2.new(1, -16, 0, 20)
-codeLabel.BackgroundTransparency = 1
-codeLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-codeLabel.TextSize = 12
-codeLabel.Font = Enum.Font.Gotham
-codeLabel.Text = "Session Code: ---"
-codeLabel.Parent = frame
-
--- Buttons row
-local btnRow = Instance.new("Frame")
-btnRow.Size = UDim2.new(1, -16, 0, 32)
-btnRow.BackgroundTransparency = 1
-btnRow.Parent = frame
-
-local createBtn = Instance.new("TextButton")
-createBtn.Size = UDim2.new(0.5, -4, 1, 0)
-createBtn.BackgroundColor3 = Color3.fromRGB(20, 184, 166)
-createBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-createBtn.Text = "Create Session"
-createBtn.TextSize = 14
-createBtn.Font = Enum.Font.GothamSemibold
-createBtn.BorderSizePixel = 0
-createBtn.Parent = btnRow
-
-local stopBtn = Instance.new("TextButton")
-stopBtn.Size = UDim2.new(0.5, -4, 1, 0)
-stopBtn.Position = UDim2.new(0.5, 4, 0, 0)
-stopBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopBtn.Text = "Stop"
-stopBtn.TextSize = 14
-stopBtn.Font = Enum.Font.GothamSemibold
-stopBtn.BorderSizePixel = 0
-stopBtn.Parent = btnRow
-
--- Status
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -16, 0, 18)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-statusLabel.TextSize = 11
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.Text = "Status: Idle"
-statusLabel.Parent = frame
-
--- Output
-local outputBox = Instance.new("ScrollingFrame")
-outputBox.Size = UDim2.new(1, -16, 0, 200)
-outputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-outputBox.BorderSizePixel = 0
-outputBox.CanvasSize = UDim2.new(0, 0, 0, 0)
-outputBox.ScrollBarThickness = 4
-outputBox.Parent = frame
-
-local outputLayout = Instance.new("UIListLayout")
-outputLayout.Padding = UDim.new(0, 2)
-outputLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-outputLayout.Parent = outputBox
-
-local function addOutput(text, color)
-	local line = Instance.new("TextLabel")
-	line.Size = UDim2.new(1, -8, 0, 16)
-	line.BackgroundTransparency = 1
-	line.Text = text
-	line.TextColor3 = color or Color3.fromRGB(200, 200, 200)
-	line.TextSize = 11
-	line.Font = Enum.Font.Gotham
-	line.TextXAlignment = Enum.TextXAlignment.Left
-	line.Parent = outputBox
-	outputBox.CanvasSize = UDim2.new(0, 0, 0, outputLayout.AbsoluteContentSize.Y)
-	task.wait(0.05)
-	outputBox.CanvasPosition = Vector2.new(0, outputLayout.AbsoluteContentSize.Y)
+-- Helper: Create UI elements
+local function create(class, props, children)
+	local obj = Instance.new(class)
+	for k, v in pairs(props or {}) do
+		obj[k] = v
+	end
+	for _, child in ipairs(children or {}) do
+		child.Parent = obj
+	end
+	return obj
 end
 
-local activeCode = nil
-local polling = false
-local connection = nil
+local function createCorner(radius)
+	return create("UICorner", { CornerRadius = UDim.new(0, radius or 8) })
+end
+
+local function createStroke(color, thickness)
+	return create("UIStroke", {
+		Color = color or COLORS.border,
+		Thickness = thickness or 1,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+	})
+end
+
+-- Build UI
+local mainFrame = create("Frame", {
+	BackgroundColor3 = COLORS.bg,
+	BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 1, 0),
+}, {
+	createCorner(0),
+})
+
+-- Header
+local header = create("Frame", {
+	BackgroundColor3 = COLORS.surface,
+	BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, 48),
+}, {
+	createCorner(12),
+	createStroke(),
+	create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 12),
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+	}),
+	create("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 8, 0, 0),
+	}),
+	create("TextLabel", {
+		BackgroundTransparency = 1,
+		Text = "🥥",
+		TextSize = 20,
+		Size = UDim2.new(0, 28, 0, 28),
+	}),
+	create("TextLabel", {
+		BackgroundTransparency = 1,
+		Text = "Coconut AI",
+		TextSize = 16,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = COLORS.primary,
+		Size = UDim2.new(0, 0, 0, 20),
+		AutomaticSize = Enum.AutomaticSize.X,
+	}),
+})
+
+-- Status bar
+local statusBar = create("Frame", {
+	BackgroundColor3 = COLORS.surface,
+	BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, 32),
+}, {
+	createCorner(8),
+	createStroke(),
+	create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 6),
+	}),
+	create("Frame", { BackgroundTransparency = 1, Size = UDim2.new(0, 10, 0, 0) }),
+})
+
+local statusDot = create("Frame", {
+	BackgroundColor3 = COLORS.textMuted,
+	Size = UDim2.new(0, 8, 0, 8),
+}, { createCorner(4) })
+statusDot.Parent = statusBar
+
+local statusText = create("TextLabel", {
+	BackgroundTransparency = 1,
+	Text = "Ready",
+	TextSize = 12,
+	Font = Enum.Font.Gotham,
+	TextColor3 = COLORS.textSecondary,
+	Size = UDim2.new(0, 0, 0, 16),
+	AutomaticSize = Enum.AutomaticSize.X,
+})
+statusText.Parent = statusBar
+
+-- Session section
+local sessionFrame = create("Frame", {
+	BackgroundColor3 = COLORS.surface,
+	BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, 90),
+}, {
+	createCorner(10),
+	createStroke(),
+	create("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12) }),
+	create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Vertical,
+		Padding = UDim.new(0, 6),
+	}),
+})
+
+local sessionLabel = create("TextLabel", {
+	BackgroundTransparency = 1,
+	Text = "SESSION",
+	TextSize = 10,
+	Font = Enum.Font.GothamBold,
+	TextColor3 = COLORS.textMuted,
+	Size = UDim2.new(1, 0, 0, 14),
+})
+sessionLabel.Parent = sessionFrame
+
+local codeRow = create("Frame", {
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1, 0, 0, 32),
+}, {
+	create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 8),
+	}),
+})
+codeRow.Parent = sessionFrame
+
+local codeBox = create("TextLabel", {
+	BackgroundColor3 = COLORS.bg,
+	Text = "---",
+	TextSize = 20,
+	Font = Enum.Font.GothamBold,
+	TextColor3 = COLORS.primary,
+	Size = UDim2.new(0, 130, 0, 32),
+}, { createCorner(8), createStroke(COLORS.primary, 1) })
+codeBox.Parent = codeRow
+
+local createBtn = create("TextButton", {
+	BackgroundColor3 = COLORS.primary,
+	Text = "Create Session",
+	TextSize = 12,
+	Font = Enum.Font.GothamSemibold,
+	TextColor3 = Color3.fromRGB(255, 255, 255),
+	Size = UDim2.new(0, 120, 0, 32),
+	AutoButtonColor = false,
+}, { createCorner(8) })
+createBtn.Parent = codeRow
+
+local connectBtn = create("TextButton", {
+	BackgroundColor3 = COLORS.success,
+	Text = "Connected",
+	TextSize = 12,
+	Font = Enum.Font.GothamSemibold,
+	TextColor3 = Color3.fromRGB(255, 255, 255),
+	Size = UDim2.new(1, -12, 0, 30),
+	Visible = false,
+	AutoButtonColor = false,
+}, { createCorner(8) })
+connectBtn.Parent = sessionFrame
+
+-- Log section
+local logHeader = create("Frame", {
+	BackgroundColor3 = COLORS.surface,
+	BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, 28),
+}, {
+	createCorner(8),
+	createStroke(),
+	create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+	}),
+	create("Frame", { BackgroundTransparency = 1, Size = UDim2.new(0, 10, 0, 0) }),
+	create("TextLabel", {
+		BackgroundTransparency = 1,
+		Text = "OUTPUT",
+		TextSize = 10,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = COLORS.textMuted,
+		Size = UDim2.new(0, 0, 0, 14),
+		AutomaticSize = Enum.AutomaticSize.X,
+	}),
+	create("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -120, 0, 0) }),
+	local clearLogBtn = create("TextButton", {
+		BackgroundTransparency = 1,
+		Text = "Clear",
+		TextSize = 10,
+		Font = Enum.Font.GothamSemibold,
+		TextColor3 = COLORS.textMuted,
+		Size = UDim2.new(0, 50, 0, 20),
+	}),
+})
+
+local logContainer = create("ScrollingFrame", {
+	BackgroundColor3 = COLORS.surface,
+	BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 1, -230),
+	CanvasSize = UDim2.new(0, 0, 0, 0),
+	ScrollBarThickness = 4,
+	ScrollBarImageColor3 = COLORS.border,
+}, {
+	createCorner(10),
+	createStroke(),
+})
+
+local logLayout = create("UIListLayout", {
+	Padding = UDim.new(0, 2),
+	HorizontalAlignment = Enum.HorizontalAlignment.Left,
+})
+logLayout.Parent = logContainer
+
+-- Layout assembly
+local bodyLayout = create("UIListLayout", {
+	Padding = UDim.new(0, 6),
+	VerticalAlignment = Enum.VerticalAlignment.Top,
+})
+bodyLayout.Parent = mainFrame
+
+local bodyPadding = create("UIPadding", {
+	PaddingTop = UDim.new(0, 6),
+	PaddingLeft = UDim.new(0, 10),
+	PaddingRight = UDim.new(0, 10),
+	PaddingBottom = UDim.new(0, 50),
+})
+bodyPadding.Parent = mainFrame
+
+header.Parent = mainFrame
+statusBar.Parent = mainFrame
+sessionFrame.Parent = mainFrame
+logHeader.Parent = mainFrame
+logContainer.Parent = mainFrame
+
+widget.Content = mainFrame
+
+-- Plugin state
+local sessionCode = nil
+local isPolling = false
+local pollConnection = nil
+
+-- Log helper
+local function addLog(text, color, isBold)
+	local line = create("TextLabel", {
+		BackgroundTransparency = 1,
+		Text = text,
+		TextSize = 11,
+		Font = if isBold then Enum.Font.GothamSemibold else Enum.Font.Gotham,
+		TextColor3 = color or COLORS.textSecondary,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(1, -8, 0, 18),
+		RichText = true,
+	})
+	line.Parent = logContainer
+	logContainer.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 4)
+	task.wait(0.02)
+	logContainer.CanvasPosition = Vector2.new(0, logLayout.AbsoluteContentSize.Y)
+end
+
+local function setStatus(text, color, dotColor)
+	statusText.Text = text
+	statusText.TextColor3 = color or COLORS.textSecondary
+	statusDot.BackgroundColor3 = dotColor or COLORS.textMuted
+end
 
 local function stopPolling()
-	polling = false
-	if connection then connection:Disconnect() connection = nil end
-	statusLabel.Text = "Status: Idle"
-	codeLabel.Text = "Session Code: ---"
-	activeCode = nil
+	isPolling = false
+	if pollConnection then
+		pollConnection:Disconnect()
+		pollConnection = nil
+	end
+	sessionCode = nil
+	codeBox.Text = "---"
+	codeBox.TextColor3 = COLORS.primary
+	createBtn.Visible = true
+	connectBtn.Visible = false
+	setStatus("Disconnected", COLORS.textMuted, COLORS.textMuted)
 end
 
-local function pollForCommands()
-	if not activeCode then return end
-	local success, result = pcall(function()
-		local http = game:GetService("HttpService")
-		local url = "https://coconutai.vercel.app/api/plugin/poll?code=" .. activeCode
-		local response = http:GetAsync(url)
-		local data = http:JSONDecode(response)
-		return data
-	end)
+local function startPolling(code)
+	sessionCode = code
+	codeBox.Text = code
+	codeBox.TextColor3 = COLORS.primary
+	createBtn.Visible = false
+	connectBtn.Visible = true
+	connectBtn.Text = "Connected"
+	connectBtn.BackgroundColor3 = COLORS.success
+	setStatus("Listening for commands...", COLORS.primary, COLORS.primary)
+	addLog("🌴 Session " .. code .. " active", COLORS.primary, true)
 
-	if success and result and result.success then
-		if result.commands and #result.commands > 0 then
-			for _, scriptCode in ipairs(result.commands) do
-				addOutput("→ Executing command...", Color3.fromRGB(45, 212, 191))
-				local execSuccess, execResult = pcall(function()
-					local func = loadstring(scriptCode)
-					if func then return func() end
-				end)
-				if execSuccess then
-					addOutput("✓ Executed successfully", Color3.fromRGB(80, 200, 120))
-				else
-					addOutput("✗ Error: " .. tostring(execResult), Color3.fromRGB(255, 100, 100))
+	isPolling = true
+	pollConnection = game:GetService("RunService").Heartbeat:Connect(function()
+		if not isPolling then return end
+		task.wait(3)
+
+		local success, result = pcall(function()
+			local httpService = game:GetService("HttpService")
+			local url = API_BASE .. "/poll?code=" .. sessionCode
+			local response = httpService:GetAsync(url)
+			return httpService:JSONDecode(response)
+		end)
+
+		if success and result and result.success then
+			if result.commands and #result.commands > 0 then
+				for _, scriptCode in ipairs(result.commands) do
+					addLog("→ Executing generated code...", COLORS.warning)
+					local execOk, execResult = pcall(function()
+						local fn, err = loadstring(scriptCode)
+						if not fn then error(err) end
+						return fn()
+					end)
+					if execOk then
+						addLog("✓ Executed successfully", COLORS.success, true)
+					else
+						addLog("✗ Error: " .. tostring(execResult), COLORS.error)
+					end
 				end
 			end
+			setStatus("Connected · " .. sessionCode, COLORS.primary, COLORS.primary)
+			connectBtn.BackgroundColor3 = COLORS.success
+			connectBtn.Text = "Connected"
+		else
+			setStatus("Connection lost", COLORS.error, COLORS.error)
+			connectBtn.BackgroundColor3 = COLORS.error
+			connectBtn.Text = "Reconnecting..."
 		end
-		statusLabel.Text = "Status: Connected"
-	else
-		statusLabel.Text = "Status: Error polling"
-	end
+	end)
 end
 
+-- Button handlers
 createBtn.MouseButton1Click:Connect(function()
-	stopPolling()
-	addOutput("Creating session...", Color3.fromRGB(150, 150, 150))
+	addLog("Creating session...", COLORS.textSecondary)
+	createBtn.Text = "..."
+	createBtn.BackgroundColor3 = COLORS.textMuted
 
 	local success, result = pcall(function()
-		local http = game:GetService("HttpService")
-		local response = http:PostAsync("https://coconutai.vercel.app/api/plugin/create", "", Enum.HttpContentType.ApplicationJson)
-		return http:JSONDecode(response)
+		local httpService = game:GetService("HttpService")
+		local response = httpService:PostAsync(API_BASE .. "/create", "", Enum.HttpContentType.ApplicationJson)
+		return httpService:JSONDecode(response)
 	end)
 
-	if success and result and result.success then
-		activeCode = result.code
-		codeLabel.Text = "Session Code: " .. activeCode
-		addOutput("Session created: " .. activeCode, Color3.fromRGB(45, 212, 191))
-		statusLabel.Text = "Status: Polling"
-		polling = true
+	createBtn.Text = "Create Session"
+	createBtn.BackgroundColor3 = COLORS.primary
 
-		-- Poll every 3 seconds
-		connection = game:GetService("RunService").Heartbeat:Connect(function()
-			if not polling then return end
-			pollForCommands()
-			task.wait(3)
-		end)
+	if success and result and result.success then
+		startPolling(result.code)
+		addLog("⚡ Session created! Enter code on website", COLORS.success, true)
 	else
-		addOutput("Failed to create session", Color3.fromRGB(255, 100, 100))
+		addLog("✗ Failed to create session", COLORS.error, true)
+		setStatus("Error creating session", COLORS.error, COLORS.error)
 	end
 end)
 
-stopBtn.MouseButton1Click:Connect(stopPolling)
-
-toggleBtn.Click:Connect(function()
-	dockWidget.Enabled = not dockWidget.Enabled
+connectBtn.MouseButton1Click:Connect(function()
+	stopPolling()
+	addLog("Session disconnected", COLORS.textMuted)
 end)
 
-addOutput("Coconut AI plugin loaded.", Color3.fromRGB(100, 200, 255))
-addOutput("Click 'Create Session' to start.", Color3.fromRGB(150, 150, 150))
+clearLogBtn.MouseButton1Click:Connect(function()
+	logContainer:ClearAllChildren()
+	logLayout.Parent = logContainer
+	addLog("Output cleared", COLORS.textMuted)
+end)
+
+toggleButton.Click:Connect(function()
+	widget.Enabled = not widget.Enabled
+end)
+
+-- Startup
+addLog("🥥 Coconut AI v1.0 loaded", COLORS.primary, true)
+addLog("Click 'Create Session' to connect to the web app", COLORS.textSecondary)
+setStatus("Ready", COLORS.textSecondary, COLORS.textMuted)

@@ -211,17 +211,27 @@ export default function DashboardPage() {
               {workspaces.length ? workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>) : <option>{DEFAULT_WORKSPACE}</option>}
             </select>
           </div>
-          <div className="flex items-center gap-3 text-xs text-stone-400">
+          <div className="flex items-center gap-2 text-xs text-stone-400">
+            {/* Studio Sync */}
+            <div className="flex items-center gap-1.5 bg-white/50 border border-sand-100 rounded-xl px-2.5 py-1 shadow-sm">
+              <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Studio</span>
+              <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Code" className="w-14 bg-transparent text-xs text-stone-700 outline-none uppercase placeholder-stone-300" maxLength={6} />
+              {pluginStatus ? (
+                <span className="text-[10px] text-ocean-500 font-medium whitespace-nowrap">{pluginStatus}</span>
+              ) : (
+                <span className={`w-1.5 h-1.5 rounded-full ${pluginCode.trim().length === 6 ? 'bg-ocean-400' : 'bg-stone-200'}`} />
+              )}
+            </div>
             {robloxStatus && <span className="text-ocean-500 bg-ocean-50 px-2 py-0.5 rounded-lg">{robloxStatus}</span>}
-            <a href="/api/auth/roblox" className={`px-3 py-1 rounded-xl text-xs font-medium transition-all shadow-sm ${robloxLinked ? 'bg-ocean-50 text-ocean-600 border border-ocean-100' : 'bg-white/60 text-sand-500 border border-sand-200 hover:bg-sand-50'}`}>
+            <a href="/api/auth/roblox" className={`px-2 py-1 rounded-xl text-xs font-medium transition-all shadow-sm ${robloxLinked ? 'bg-ocean-50 text-ocean-600 border border-ocean-100' : 'bg-white/60 text-sand-500 border border-sand-200 hover:bg-sand-50'}`}>
               {robloxLinked ? `🔗 ${robloxUsername}` : 'Link Roblox'}
             </a>
-            <span className={`w-2 h-2 rounded-full shadow-sm ${syncStatus === 'Connected' ? 'bg-ocean-400' : 'bg-coral-400'}`} />
-            <span>{syncStatus}</span>
+            <span className={`w-1.5 h-1.5 rounded-full shadow-sm ${syncStatus === 'Connected' ? 'bg-ocean-400' : 'bg-coral-400'}`} />
+            <span className="text-[10px]">{syncStatus}</span>
             <span className="text-sand-200/50 text-sm">|</span>
-            {userRole === 'premium' && <span className="text-xs bg-gradient-to-r from-amber-200 to-amber-400 text-amber-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ PREMIUM</span>}
-            {userRole === 'admin' && <span className="text-xs bg-gradient-to-r from-coral-200 to-coral-400 text-coral-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ ADMIN</span>}
-            <span className="text-stone-600 font-medium bg-white/40 px-3 py-1 rounded-xl border border-sand-100 shadow-sm">{userName}</span>
+            {userRole === 'premium' && <span className="text-[10px] bg-gradient-to-r from-amber-200 to-amber-400 text-amber-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ PREMIUM</span>}
+            {userRole === 'admin' && <span className="text-[10px] bg-gradient-to-r from-coral-200 to-coral-400 text-coral-800 px-2 py-0.5 rounded-lg font-semibold shadow-sm">✦ ADMIN</span>}
+            <span className="text-stone-600 font-medium bg-white/40 px-2 py-1 rounded-xl border border-sand-100 shadow-sm text-[11px]">{userName}</span>
           </div>
         </header>
 
@@ -298,13 +308,6 @@ export default function DashboardPage() {
                 <button onClick={handleGenerate} disabled={isGenerating} className="mt-2 w-full py-2.5 bg-gradient-to-r from-ocean-400 to-teal-400 hover:from-ocean-500 hover:to-teal-500 disabled:opacity-50 text-sm font-semibold rounded-xl text-white transition-all shadow-md hover:shadow-lg">
                   {isGenerating ? '🌊 Generating...' : '🌴 Generate'}
                 </button>
-                <div className="mt-3 pt-3 border-t border-sand-100/50">
-                  <label className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">🔗 Studio Sync</label>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Session code" className="flex-1 bg-white/90 text-xs text-stone-700 border border-sand-200 rounded-xl px-3 py-1.5 outline-none placeholder-stone-300 uppercase shadow-sm" maxLength={6} />
-                    {pluginStatus && <span className="text-[10px] text-ocean-500 whitespace-nowrap bg-ocean-50 px-2 py-0.5 rounded-lg font-medium">{pluginStatus}</span>}
-                  </div>
-                </div>
               </div>
             </aside>
           )}
