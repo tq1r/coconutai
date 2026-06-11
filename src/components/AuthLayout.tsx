@@ -13,23 +13,23 @@ interface AuthLayoutProps {
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle, footerText, footerLink }) => {
   return (
-    <div className="min-h-screen bg-[#0d0b0a] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-sand-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 no-underline mb-4">
-            <span className="text-2xl">🥥</span>
-            <span className="font-bold text-lg bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-transparent">Coconut AI</span>
+            <span className="text-3xl">🥥</span>
+            <span className="font-bold text-xl text-ocean-600">Coconut AI</span>
           </Link>
-          <h1 className="text-xl font-bold text-white mb-1">{title}</h1>
-          {subtitle && <p className="text-xs text-sand-400">{subtitle}</p>}
+          <h1 className="text-2xl font-bold text-stone-800 mb-1.5">{title}</h1>
+          {subtitle && <p className="text-sm text-stone-400">{subtitle}</p>}
         </div>
-        <div className="bg-[#1a1815] border border-[#2a2620] rounded-lg p-6">
+        <div className="bg-white border border-sand-100 rounded-xl p-7 shadow-sm">
           {children}
         </div>
         {footerText && footerLink && (
-          <p className="text-center text-xs text-sand-400 mt-5">
+          <p className="text-center text-sm text-stone-400 mt-6">
             {footerText}{' '}
-            <Link href={footerLink.href} className="text-cyan-400 hover:text-cyan-300 no-underline">{footerLink.text}</Link>
+            <Link href={footerLink.href} className="text-ocean-500 hover:text-ocean-600 no-underline font-medium">{footerLink.text}</Link>
           </p>
         )}
       </div>

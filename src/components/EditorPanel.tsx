@@ -40,11 +40,11 @@ export default function EditorPanel({ code, onChange, activeFile }: EditorPanelP
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center px-4 h-9 bg-[#0d0b0a] border-b border-[#2a2620] text-xs text-sand-400">
-        <span className="text-cyan-400">{activeFile?.name || 'untitled.lua'}</span>
+      <div className="flex items-center px-4 h-9 bg-white border-b border-sand-100 text-sm text-stone-400">
+        <span className="text-ocean-500 font-medium">{activeFile?.name || 'untitled.lua'}</span>
       </div>
-      <div className="flex-1 flex overflow-hidden bg-[#1a1815]">
-        <div className="select-none text-right px-3 py-3 text-xs leading-6 text-sand-500 bg-[#0d0b0a] border-r border-[#2a2620] overflow-hidden" style={{ minWidth: 48 }}>
+      <div className="flex-1 flex overflow-hidden">
+        <div className="select-none text-right px-3 py-3 text-xs leading-6 text-stone-300 bg-stone-50 border-r border-sand-100 overflow-hidden font-mono" style={{ minWidth: 44 }}>
           {Array.from({ length: lineCount }, (_, i) => (
             <div key={i}>{i + 1}</div>
           ))}
@@ -55,7 +55,7 @@ export default function EditorPanel({ code, onChange, activeFile }: EditorPanelP
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           spellCheck={false}
-          className="flex-1 bg-transparent text-white text-xs leading-6 p-3 outline-none resize-none border-none font-mono"
+          className="flex-1 bg-white text-stone-800 text-sm leading-6 p-3 outline-none resize-none border-none font-mono"
           style={{ tabSize: 2 }}
         />
       </div>

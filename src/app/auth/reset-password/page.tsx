@@ -11,19 +11,17 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setMessage('');
-    setLoading(true);
-    // Simulate password reset
+    setMessage(''); setLoading(true);
     await new Promise((r) => setTimeout(r, 1000));
-    setMessage('If that email exists, you\'ll receive reset instructions.');
+    setMessage('If that email exists, check your inbox for reset instructions.');
     setLoading(false);
   };
 
   return (
-    <AuthLayout title="Reset Password" subtitle="We'll send you recovery instructions" footerText="Remember your password?" footerLink={{ text: 'Sign in', href: '/auth/login' }}>
+    <AuthLayout title="Reset Password" subtitle="Enter your email and we'll send you recovery instructions" footerText="Remember your password?" footerLink={{ text: 'Sign in', href: '/auth/login' }}>
       <form onSubmit={handleSubmit}>
         <AuthInput label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-        {message && <p className="text-green-400 text-xs mb-3">{message}</p>}
+        {message && <p className="text-ocean-600 text-sm mb-3">{message}</p>}
         <AuthButton isLoading={loading}>Send Reset Link</AuthButton>
       </form>
     </AuthLayout>

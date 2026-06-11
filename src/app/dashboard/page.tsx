@@ -51,9 +51,7 @@ export default function DashboardPage() {
   const code = activeFile?.content ?? DEFAULT_CODE;
 
   useEffect(() => {
-    fetchCurrentUser();
-    fetchModels();
-    fetchWorkspaceList();
+    fetchCurrentUser(); fetchModels(); fetchWorkspaceList();
     const params = new URLSearchParams(window.location.search);
     const rbx = params.get('roblox');
     if (rbx === 'linked') { setRobloxStatus('✅ Roblox linked!'); fetchCurrentUser(); }
@@ -188,28 +186,28 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen flex flex-col bg-[#0d0b0a]">
+      <div className="h-screen flex flex-col bg-white">
         {/* Navbar */}
-        <header className="flex items-center justify-between px-4 h-10 bg-[#0d0b0a] border-b border-[#2a2620] flex-shrink-0">
+        <header className="flex items-center justify-between px-4 h-11 bg-white border-b border-sand-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-base">🥥</span>
-            <span className="font-semibold text-xs text-cyan-400">Coconut AI</span>
-            <span className="text-[#3a3428] text-xs">|</span>
-            <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="bg-transparent text-xs text-sand-400 border border-[#2a2620] rounded px-2 py-0.5 outline-none">
+            <span className="text-lg">🥥</span>
+            <span className="font-semibold text-sm text-ocean-500">Coconut AI</span>
+            <span className="text-sand-200 text-xs">|</span>
+            <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="bg-stone-50 text-sm text-stone-500 border border-sand-100 rounded-lg px-2 py-1 outline-none">
               {workspaces.length ? workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>) : <option>{DEFAULT_WORKSPACE}</option>}
             </select>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-sand-500">
-            {robloxStatus && <span className="text-emerald-400">{robloxStatus}</span>}
-            <a href="/api/auth/roblox" className={`px-2 py-0.5 rounded font-medium transition-colors ${robloxLinked ? 'bg-emerald-600/20 text-emerald-400' : 'bg-orange-600/20 text-orange-400 hover:bg-orange-600/30'}`}>
+          <div className="flex items-center gap-3 text-xs text-stone-400">
+            {robloxStatus && <span className="text-ocean-500">{robloxStatus}</span>}
+            <a href="/api/auth/roblox" className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${robloxLinked ? 'bg-ocean-50 text-ocean-600' : 'bg-sand-50 text-sand-500 hover:bg-sand-100'}`}>
               {robloxLinked ? `Roblox: ${robloxUsername}` : 'Link Roblox'}
             </a>
-            <span className={`w-1.5 h-1.5 rounded-full ${syncStatus === 'Connected' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${syncStatus === 'Connected' ? 'bg-ocean-400' : 'bg-coral-400'}`} />
             <span>{syncStatus}</span>
-            <span className="text-[#3a3428]">|</span>
-            {userRole === 'premium' && <span className="text-[10px] text-amber-400 font-semibold">✦ PREMIUM</span>}
-            {userRole === 'admin' && <span className="text-[10px] text-rose-400 font-semibold">✦ ADMIN</span>}
-            <span className="text-sand-300">{userName}</span>
+            <span className="text-sand-200">|</span>
+            {userRole === 'premium' && <span className="text-xs text-amber-500 font-semibold">✦ PREMIUM</span>}
+            {userRole === 'admin' && <span className="text-xs text-coral-500 font-semibold">✦ ADMIN</span>}
+            <span className="text-stone-600 font-medium">{userName}</span>
           </div>
         </header>
 
@@ -217,14 +215,14 @@ export default function DashboardPage() {
         <div className="flex flex-1 overflow-hidden">
           {/* Explorer */}
           {showExplorer && (
-            <aside className="w-48 bg-[#0d0b0a] border-r border-[#2a2620] flex flex-col flex-shrink-0">
-              <div className="flex items-center justify-between px-3 h-8 text-[10px] text-sand-500 border-b border-[#2a2620]">
-                <span>EXPLORER</span>
-                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="text-cyan-400 hover:text-cyan-300 text-xs">+</button>
+            <aside className="w-48 bg-white border-r border-sand-100 flex flex-col flex-shrink-0">
+              <div className="flex items-center justify-between px-3 h-8 text-xs text-stone-400 border-b border-sand-100">
+                <span className="font-medium text-stone-500">EXPLORER</span>
+                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="text-ocean-400 hover:text-ocean-500 text-sm">+</button>
               </div>
               {showNewFileInput && (
-                <div className="p-2 border-b border-[#2a2620]">
-                  <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full bg-[#1a1815] text-xs text-white border border-[#2a2620] rounded px-2 py-1 outline-none" autoFocus />
+                <div className="p-2 border-b border-sand-100">
+                  <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full bg-stone-50 text-sm text-stone-700 border border-sand-200 rounded-lg px-2 py-1.5 outline-none" autoFocus />
                 </div>
               )}
               <div className="flex-1 overflow-y-auto py-1">
@@ -237,50 +235,50 @@ export default function DashboardPage() {
                       const newFile: ScriptFile = { id: project.id, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId: project.id, updatedAt: new Date().toISOString() };
                       setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
                     }
-                  }} className={`w-full text-left px-3 py-1 text-[11px] transition-colors ${activeProjectId === project.id ? 'bg-cyan-900/30 text-cyan-300 border-l-2 border-cyan-400' : 'text-sand-400 hover:bg-[#1a1815] border-l-2 border-transparent'}`}>
+                  }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${activeProjectId === project.id ? 'bg-ocean-50 text-ocean-600 border-l-2 border-ocean-400 font-medium' : 'text-stone-500 hover:bg-stone-50 border-l-2 border-transparent'}`}>
                     📄 {project.name}.lua
                   </button>
                 ))}
-                {projects.length === 0 && <p className="text-[10px] text-sand-500 text-center mt-6">No files</p>}
+                {projects.length === 0 && <p className="text-xs text-stone-300 text-center mt-6">No files</p>}
               </div>
             </aside>
           )}
 
           {/* Editor */}
-          <main className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden bg-stone-50">
             <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
           </main>
 
           {/* Chat */}
           {showChat && (
-            <aside className="w-72 bg-[#0d0b0a] border-l border-[#2a2620] flex flex-col flex-shrink-0">
-              <div className="flex items-center justify-between px-3 h-8 text-[10px] text-sand-500 border-b border-[#2a2620]">
-                <span>AI ASSISTANT</span>
-                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="bg-transparent text-cyan-400 border border-[#2a2620] rounded px-1.5 py-0.5 text-[10px] outline-none">
+            <aside className="w-72 bg-white border-l border-sand-100 flex flex-col flex-shrink-0">
+              <div className="flex items-center justify-between px-3 h-8 text-xs text-stone-400 border-b border-sand-100">
+                <span className="font-medium text-stone-500">AI ASSISTANT</span>
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="bg-stone-50 text-ocean-500 border border-sand-100 rounded-lg px-1.5 py-1 text-xs outline-none">
                   {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {chatHistory.length === 0 ? (
-                  <div className="text-xs text-sand-500 text-center mt-8">
-                    <p className="text-cyan-400 text-lg mb-2">🏝️</p>
+                  <div className="text-sm text-stone-400 text-center mt-8">
+                    <p className="text-3xl mb-2">🏝️</p>
                     <p>Ask AI to generate Roblox scripts, UI, or game systems.</p>
                   </div>
                 ) : chatHistory.map((msg, i) => (
-                  <div key={i} className={`text-xs leading-relaxed ${msg.role === 'assistant' ? 'text-sand-200' : 'text-sand-400'}`}>
-                    <div className="font-semibold mb-1 text-[10px] uppercase tracking-wider">{msg.role === 'assistant' ? 'Coconut AI' : 'You'}</div>
-                    <pre className="whitespace-pre-wrap font-sans text-[11px]">{msg.text}</pre>
+                  <div key={i} className={`text-sm leading-relaxed ${msg.role === 'assistant' ? 'text-stone-700' : 'text-stone-400'}`}>
+                    <div className="font-semibold mb-1 text-xs uppercase tracking-wider">{msg.role === 'assistant' ? 'Coconut AI' : 'You'}</div>
+                    <pre className="whitespace-pre-wrap font-sans">{msg.text}</pre>
                     {msg.role === 'assistant' && msg.text.includes('function') && (
-                      <button onClick={() => applyCodeFromChat(msg.text)} className="mt-1 text-[10px] text-cyan-400 hover:text-cyan-300">Apply to editor</button>
+                      <button onClick={() => applyCodeFromChat(msg.text)} className="mt-1 text-xs text-ocean-500 hover:text-ocean-600 font-medium">Apply to editor</button>
                     )}
                   </div>
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-3 border-t border-[#2a2620]">
-                {error && <p className="text-[10px] text-rose-400 mb-2">{error}</p>}
-                <textarea rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())} placeholder="Describe the script or system you want..." className="w-full resize-none bg-[#1a1815] text-xs text-white border border-[#2a2620] rounded-lg px-3 py-2 outline-none placeholder-sand-500" />
-                <button onClick={handleGenerate} disabled={isGenerating} className="mt-2 w-full py-1.5 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 disabled:opacity-50 text-xs font-medium rounded-lg transition-all">
+              <div className="p-3 border-t border-sand-100">
+                {error && <p className="text-xs text-coral-500 mb-2">{error}</p>}
+                <textarea rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())} placeholder="Describe the script or system you want..." className="w-full resize-none bg-stone-50 text-sm text-stone-700 border border-sand-200 rounded-lg px-3 py-2 outline-none placeholder-stone-300" />
+                <button onClick={handleGenerate} disabled={isGenerating} className="mt-2 w-full py-2 bg-ocean-500 hover:bg-ocean-600 disabled:opacity-50 text-sm font-medium rounded-lg text-white transition-colors shadow-sm">
                   {isGenerating ? 'Generating...' : 'Generate'}
                 </button>
               </div>
@@ -289,15 +287,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Status Bar */}
-        <footer className="flex items-center justify-between px-4 h-6 bg-[#0d0b0a] border-t border-[#2a2620] flex-shrink-0">
-          <div className="flex items-center gap-4 text-[10px] text-sand-500">
-            <button onClick={() => setShowExplorer(!showExplorer)} className="hover:text-sand-200 transition-colors">{showExplorer ? 'Hide Explorer' : 'Show Explorer'}</button>
+        <footer className="flex items-center justify-between px-4 h-6 bg-white border-t border-sand-100 flex-shrink-0">
+          <div className="flex items-center gap-4 text-xs text-stone-400">
+            <button onClick={() => setShowExplorer(!showExplorer)} className="hover:text-ocean-500 transition-colors">{showExplorer ? 'Hide Explorer' : 'Show Explorer'}</button>
             <span>Ln 1, Col 1</span>
             <span>Lua</span>
           </div>
-          <div className="flex items-center gap-4 text-[10px] text-sand-500">
+          <div className="flex items-center gap-4 text-xs text-stone-400">
             <span>Model: {models.find((m) => m.id === selectedModel)?.name || 'GPT-4o'}</span>
-            <button onClick={() => setShowChat(!showChat)} className="hover:text-sand-200 transition-colors">{showChat ? 'Hide Chat' : 'Show Chat'}</button>
+            <button onClick={() => setShowChat(!showChat)} className="hover:text-ocean-500 transition-colors">{showChat ? 'Hide Chat' : 'Show Chat'}</button>
           </div>
         </footer>
       </div>

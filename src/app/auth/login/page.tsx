@@ -15,13 +15,9 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Login failed'); return; }
       router.push('/dashboard');
@@ -29,14 +25,14 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Sign In" subtitle="Welcome back to Coconut AI" footerText="Don't have an account?" footerLink={{ text: 'Sign up', href: '/auth/signup' }}>
+    <AuthLayout title="Welcome Back" subtitle="Sign in to your Coconut AI account" footerText="Don't have an account?" footerLink={{ text: 'Sign up', href: '/auth/signup' }}>
       <form onSubmit={handleSubmit}>
         <AuthInput label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         <AuthInput label="Password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        {error && <p className="text-rose-400 text-xs mb-3">{error}</p>}
+        {error && <p className="text-coral-500 text-sm mb-3">{error}</p>}
         <AuthButton isLoading={loading}>Sign In</AuthButton>
-        <div className="mt-3 text-center">
-          <Link href="/auth/reset-password" className="text-xs text-sand-400 hover:text-cyan-400 no-underline">Forgot password?</Link>
+        <div className="mt-4 text-center">
+          <Link href="/auth/reset-password" className="text-sm text-stone-400 hover:text-ocean-500 no-underline">Forgot password?</Link>
         </div>
       </form>
     </AuthLayout>
