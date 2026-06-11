@@ -1,9 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { StreamLanguage } from '@codemirror/language';
-import { lua } from '@codemirror/legacy-modes/mode/lua';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { ScriptFile } from '@/types';
 
 interface EditorPanelProps {
@@ -12,46 +9,54 @@ interface EditorPanelProps {
   activeFile: ScriptFile | undefined;
 }
 
-const darkTheme = {
-  '&': { backgroundColor: '#0a0a0f', color: '#c0c0d0' },
-  '.cm-gutters': { backgroundColor: '#0d0d14', color: '#3a3a4a', border: 'none' },
-  '.cm-activeLineGutter': { backgroundColor: '#15152a' },
-  '.cm-activeLine': { backgroundColor: '#15152a33' },
-  '.cm-cursor': { borderLeftColor: '#22d3ee' },
-  '.cm-selectionBackground': { backgroundColor: '#1a3a5a55' },
-  '.cm-matchingBracket': { backgroundColor: '#2a4a3a55', outline: '1px solid #2a6a5a' },
-  '.cm-linenumber': { color: '#3a3a4a' },
-};
-
 export default function EditorPanel({ code, onChange, activeFile }: EditorPanelProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [lineCount, setLineCount] = useState(1);
+
   const handleChange = useCallback(
-    (val: string) => onChange(val),
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChange(e.target.value);
+      setLineCount((e.target.value.match(/\n/g) || []).length + 1);
+    },
     [onChange]
   );
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const val = ta.value;
+      ta.value = val.substring(0, start) + '  ' + val.substring(end);
+      ta.selectionStart = ta.selectionEnd = start + 2;
+      onChange(ta.value);
+    }
+  }, [onChange]);
+
+  useEffect(() => {
+    setLineCount((code.match(/\n/g) || []).length + 1);
+  }, [code]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center px-4 h-9 bg-[#0d0d14] border-b border-[#1e1e2a] text-xs text-[#6666a0]">
-        <span className="text-cyan-300">{activeFile?.name || 'untitled.lua'}</span>
+      <div className="flex items-center px-4 h-9 bg-[#0d0b0a] border-b border-[#2a2620] text-xs text-sand-400">
+        <span className="text-cyan-400">{activeFile?.name || 'untitled.lua'}</span>
       </div>
-      <div className="flex-1 overflow-auto">
-        <CodeMirror
+      <div className="flex-1 flex overflow-hidden bg-[#1a1815]">
+        <div className="select-none text-right px-3 py-3 text-xs leading-6 text-sand-500 bg-[#0d0b0a] border-r border-[#2a2620] overflow-hidden" style={{ minWidth: 48 }}>
+          {Array.from({ length: lineCount }, (_, i) => (
+            <div key={i}>{i + 1}</div>
+          ))}
+        </div>
+        <textarea
+          ref={textareaRef}
           value={code}
           onChange={handleChange}
-          extensions={[StreamLanguage.define(lua)]}
-          theme={darkTheme as any}
-          height="100%"
-          basicSetup={{
-            foldGutter: true,
-            dropCursor: true,
-            allowMultipleSelections: true,
-            indentOnInput: true,
-            bracketMatching: true,
-            closeBrackets: true,
-            autocompletion: true,
-            highlightActiveLine: true,
-            highlightSelectionMatches: true,
-          }}
+          onKeyDown={handleKeyDown}
+          spellCheck={false}
+          className="flex-1 bg-transparent text-white text-xs leading-6 p-3 outline-none resize-none border-none font-mono"
+          style={{ tabSize: 2 }}
         />
       </div>
     </div>

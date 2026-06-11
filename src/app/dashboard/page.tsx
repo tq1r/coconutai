@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import EditorPanel from '@/components/EditorPanel';
 import type { AIModel, AIResponse, WorkspaceProject, WorkspaceSession, ScriptFile } from '@/types';
-
-const EditorPanel = dynamic(() => import('@/components/EditorPanel'), { ssr: false });
 
 interface ChatMessage {
   role: 'user' | 'assistant';
