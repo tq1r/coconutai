@@ -8,11 +8,17 @@
     "start": "next start",
     "lint": "eslint"
   },
+  "overrides": {
+    "@codemirror/state": "6.6.0",
+    "@codemirror/view": "6.43.1",
+    "@codemirror/language": "6.12.3",
+    "@codemirror/commands": "6.10.3"
+  },
   "dependencies": {
     "@codemirror/language": "^6.12.3",
     "@codemirror/legacy-modes": "^6.5.3",
     "@codemirror/state": "^6.5.2",
-    "@uiw/react-codemirror": "^4.23.10",
+    "@uiw/react-codemirror": "4.25.10",
     "@vercel/blob": "^2.4.0",
     "axios": "^1.16.1",
     "bcryptjs": "^2.4.3",
