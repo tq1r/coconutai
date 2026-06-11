@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AuthLayout } from '@/components/AuthLayout';
-import { AuthInput, AuthButton, AuthDivider, OAuthButton } from '@/components/AuthForm';
+import { AuthInput, AuthButton } from '@/components/AuthForm';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,11 +42,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleOAuth = (provider: string) => {
-    // OAuth flow will be implemented in the next phase
-    console.log(`OAuth login with ${provider}`);
-  };
-
   return (
     <AuthLayout
       title="Welcome Back"
@@ -78,26 +73,6 @@ export default function LoginPage() {
           Sign In
         </AuthButton>
       </form>
-
-      <AuthDivider />
-
-      <div className="space-y-3">
-        <OAuthButton
-          provider="google"
-          isLoading={isLoading}
-          onClick={() => handleOAuth('google')}
-        />
-        <OAuthButton
-          provider="github"
-          isLoading={isLoading}
-          onClick={() => handleOAuth('github')}
-        />
-        <OAuthButton
-          provider="discord"
-          isLoading={isLoading}
-          onClick={() => handleOAuth('discord')}
-        />
-      </div>
 
       <div className="mt-6 text-center">
         <Link
