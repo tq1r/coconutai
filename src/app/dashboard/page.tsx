@@ -45,6 +45,8 @@ export default function DashboardPage() {
   const [robloxLinked, setRobloxLinked] = useState(false);
   const [robloxUsername, setRobloxUsername] = useState('');
   const [robloxStatus, setRobloxStatus] = useState('');
+  const [pluginCode, setPluginCode] = useState('');
+  const [pluginStatus, setPluginStatus] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const activeFile = files.find((f) => f.id === activeFileId);
@@ -177,6 +179,19 @@ export default function DashboardPage() {
       const aiResponse: AIResponse = data.data;
       setChatHistory((prev) => [...prev, { role: 'user', text: prompt }, { role: 'assistant', text: aiResponse.output }]);
       setPrompt(''); setSyncStatus('Saved');
+
+      // Push to Roblox plugin if session code is set
+      if (pluginCode.trim()) {
+        try {
+          const pushRes = await fetch('/api/plugin/push', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: pluginCode.trim(), script: aiResponse.output }),
+          });
+          const pushData = await pushRes.json();
+          setPluginStatus(pushData.success ? '✨ Pushed to Studio' : '⚠️ Push failed');
+        } catch { setPluginStatus('⚠️ Push error'); }
+        setTimeout(() => setPluginStatus(''), 4000);
+      }
     } catch { setError('Unable to reach AI service.'); } finally { setIsGenerating(false); }
   }
 
@@ -255,7 +270,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between px-3 h-8 text-xs text-stone-400 border-b border-sand-100">
                 <span className="font-medium text-stone-500">AI ASSISTANT</span>
                 <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="bg-stone-50 text-ocean-500 border border-sand-100 rounded-lg px-1.5 py-1 text-xs outline-none">
-                  {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  {models.map((m) => <option key={m.id} value={m.id}>{m.name} {m.premium ? '✦' : '⊙'}</option>)}
                 </select>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -281,6 +296,13 @@ export default function DashboardPage() {
                 <button onClick={handleGenerate} disabled={isGenerating} className="mt-2 w-full py-2 bg-ocean-500 hover:bg-ocean-600 disabled:opacity-50 text-sm font-medium rounded-lg text-white transition-colors shadow-sm">
                   {isGenerating ? 'Generating...' : 'Generate'}
                 </button>
+                <div className="mt-2 pt-2 border-t border-sand-100">
+                  <label className="text-[10px] text-stone-400 font-medium uppercase tracking-wider">Studio Sync</label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Session code" className="flex-1 bg-stone-50 text-xs text-stone-700 border border-sand-200 rounded-lg px-2 py-1.5 outline-none placeholder-stone-300 uppercase" maxLength={6} />
+                    {pluginStatus && <span className="text-[10px] text-ocean-500 whitespace-nowrap">{pluginStatus}</span>}
+                  </div>
+                </div>
               </div>
             </aside>
           )}
@@ -294,7 +316,7 @@ export default function DashboardPage() {
             <span>Lua</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-stone-400">
-            <span>Model: {models.find((m) => m.id === selectedModel)?.name || 'GPT-4o'}</span>
+            <span>✦ Premium &nbsp;⊙ Free</span>
             <button onClick={() => setShowChat(!showChat)} className="hover:text-ocean-500 transition-colors">{showChat ? 'Hide Chat' : 'Show Chat'}</button>
           </div>
         </footer>

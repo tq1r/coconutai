@@ -10,6 +10,7 @@ interface Database {
   workspace_sessions: Record<string, any>;
   workspace_projects: Record<string, any>;
   audit_logs: any[];
+  plugin_sessions: Record<string, any>;
 }
 
 const DEFAULT_DB: Database = {
@@ -23,6 +24,7 @@ const DEFAULT_DB: Database = {
   workspace_sessions: {},
   workspace_projects: {},
   audit_logs: [],
+  plugin_sessions: {},
 };
 
 async function getDb(): Promise<Database> {
@@ -143,5 +145,17 @@ export async function insertUsage(record: any) {
 export async function insertAuditLog(log: any) {
   const db = await getDb();
   db.audit_logs.push(log);
+  await persist(db);
+}
+
+// Plugin session helpers
+export async function findPluginSession(code: string) {
+  const db = await getDb();
+  return db.plugin_sessions[code] || null;
+}
+
+export async function upsertPluginSession(code: string, session: any) {
+  const db = await getDb();
+  db.plugin_sessions[code] = session;
   await persist(db);
 }
