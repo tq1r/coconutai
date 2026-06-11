@@ -27,9 +27,9 @@ const DEFAULT_DB: Database = {
 
 async function getDb(): Promise<Database> {
   try {
-    const blob = await get(DB_KEY);
-    if (blob?.body) {
-      const text = await new Response(blob.body).text();
+    const result = await get(DB_KEY, { access: 'private' });
+    if (result?.stream) {
+      const text = await new Response(result.stream).text();
       return JSON.parse(text);
     }
   } catch (e) {
@@ -39,7 +39,7 @@ async function getDb(): Promise<Database> {
 }
 
 async function persist(data: Database) {
-  await put(DB_KEY, JSON.stringify(data), { access: 'private', addRandomSuffix: false, contentType: 'application/json' });
+  await put(DB_KEY, JSON.stringify(data), { access: 'private', addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json' });
 }
 
 export function generateId(): string {
