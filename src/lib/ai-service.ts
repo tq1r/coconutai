@@ -5,24 +5,73 @@ import type { AIResponse, AIModel } from '@/types';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
+function detectIntent(prompt: string): 'chat' | 'code' {
+  const p = prompt.toLowerCase().trim();
+  const greetings = ['hi', 'hello', 'hey', 'sup', 'yo', 'wsp', 'whats up', 'how are you', 'good morning', 'good evening', 'howdy', 'whats good', 'wassup'];
+  if (greetings.some(g => p === g || p.startsWith(g + ' ') || p.startsWith(g + '?'))) return 'chat';
+  if (p.includes('who are you') || p.includes('what are you') || p.includes('what can you') || p === 'who are you?' || p === 'who r u') return 'chat';
+  if (p.includes('thanks') || p.includes('thank you') || p.includes('ty') || p.includes('appreciate')) return 'chat';
+  if (/^(ok|okay|kk|alright|sure|yes|no|yeah|nah|nope|yep)\s*$/.test(p)) return 'chat';
+  if (/^(yo|lol|lmao|lmfao|nice|cool|awesome|sick|dope|bet|facts)\s*$/.test(p)) return 'chat';
+
+  const hasCodeKeywords = /combat|fight|damage|sword|weapon|attack|enemy|health|gui|ui|screen|button|frame|menu|hud|move|walk|run|speed|dash|jump|sprint|leaderboard|currency|shop|money|coins|score|economy|tower|defense|game|script|code|function|local|module|loop|spawn|wave|enemy|projectile|bullet|gun|system/i.test(p);
+  const isShortChat = p.split(/\s+/).length <= 4 && !hasCodeKeywords;
+
+  if (isShortChat) return 'chat';
+  if (hasCodeKeywords) return 'code';
+
+  if (p.length < 15) return 'chat';
+
+  return 'code';
+}
+
+function chatResponse(prompt: string): string {
+  const p = prompt.toLowerCase().trim();
+  const greetings = ['hi', 'hello', 'hey', 'sup', 'yo', 'wsp', 'whats up', 'how are you', 'good morning', 'good evening'];
+  if (greetings.some(g => p === g || p.startsWith(g + ' ') || p.startsWith(g + '?'))) {
+    return [
+      "Hey! 👋 What Roblox system are we building today? Combat, UI, movement, or an entire game mode?",
+      "Hello! 🥥 Ready to code. Describe what you want and I'll generate production-ready Luau.",
+      "Hey there! 🌴 Tell me what you're building — I can script combat, UI, economies, and more.",
+    ][Math.floor(Math.random() * 3)];
+  }
+  if (p.includes('who are you') || p.includes('what are you') || p.includes('what can you')) {
+    return "I'm Coconut AI 🥥 — your Roblox development assistant. I generate production-ready Luau code for:\n\n• Combat systems (damage, hitboxes, weapons, projectiles)\n• UI/GUI frameworks (menus, HUDs, buttons, screens)\n• Movement systems (walk, dash, sprint, double-jump)\n• Economy systems (leaderboards, currencies, shops, XP)\n• Full game modes (tower defense, obby, tycoon, RPG)\n\nJust tell me what you want to build!";
+  }
+  if (p.includes('thanks') || p.includes('thank you') || p.includes('ty')) {
+    return "You're welcome! 🥥 Want me to build anything else for your Roblox game?";
+  }
+  if (/^(ok|okay|kk|alright|sure|yes|no|yeah|nah)\s*$/.test(p)) {
+    return "Alright! What should we build? Give me a prompt and I'll write the Luau code.";
+  }
+  return "I'm here to help you build Roblox games. Try something like:\n• \"Create a tower defense spawn system\"\n• \"Build a stats GUI with health bar\"\n• \"Make a dash movement system\"\n• \"Create an economy with coins and shop\"";
+}
+
 async function requestOpenRouter(prompt: string, model: AIModel): Promise<AIResponse> {
   if (!OPENROUTER_API_KEY) {
     throw new Error('OpenRouter API key not configured. Set OPENROUTER_API_KEY in your environment variables.');
   }
+
+  const intent = detectIntent(prompt);
+  if (intent === 'chat') {
+    return {
+      model: model.name, provider: 'openrouter',
+      output: chatResponse(prompt),
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    };
+  }
+
+  const systemMsg = intent === 'code'
+    ? 'You are a world-class Roblox developer who has shipped top-earning games on the platform. You write clean, idiomatic Luau that follows Roblox best practices. Generate code that actually works — no placeholders, no TODOs, no stub functions. Every variable, function, and system you create must be fully implemented.\n\nRules:\n- Use `game:GetService("ServiceName")` pattern\n- Use lowercase 2-space indentation\n- Prefer Enum values over raw numbers\n- Use the newer Luau type annotations where appropriate\n- Modules use the `local Module = {}; return Module` pattern\n- Return ONLY the raw Luau code block. No markdown, no backticks, no explanation.\n- The code must be directly pasteable into Roblox Studio and work.'
+    : 'You are a world-class Roblox developer who is also a great teammate. When the user chats casually, respond naturally and conversationally. You can explain game design concepts, suggest features, and discuss architecture. When they ask for help, give real, actionable advice based on your experience shipping Roblox games.';
+
   const response = await axios.post(
     'https://openrouter.ai/api/v1/chat/completions',
     {
       model: model.id,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an expert Roblox (Luau) developer. Generate clean, production-ready Luau code.\n- Use lowercase 2-space indentation\n- Use `game:GetService()` pattern\n- Prefer `Enum` values over raw numbers\n- Return only the code, no explanation unless the user asks',
-        },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.2,
-      max_tokens: 1500,
+      messages: [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }],
+      temperature: intent === 'code' ? 0.2 : 0.5,
+      max_tokens: 2000,
     },
     {
       headers: {
@@ -45,18 +94,17 @@ async function requestOpenRouter(prompt: string, model: AIModel): Promise<AIResp
 
 async function requestLocal(prompt: string, model: AIModel): Promise<AIResponse> {
   const p = prompt.toLowerCase().trim();
-  const greetings = ['hi', 'hello', 'hey', 'sup', 'yo', 'whats up', 'how are you', 'good morning', 'good evening'];
-  const isGreeting = (s: string) => greetings.some(g => s === g || s.startsWith(g + ' ') || s.startsWith(g + '?'));
-  if (isGreeting(p) || p.includes('who are you') || p.includes('what are you') || p.includes('what can you')) {
+
+  if (detectIntent(p) === 'chat') {
     return {
       model: model.name, provider: 'local',
-      output: "I'm Coconut AI's TXMO model — a local inference engine for Roblox development. I can generate combat systems, UI frameworks, movement scripts, economy systems, and more. Describe what you want to build!",
+      output: chatResponse(prompt),
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     };
   }
 
   const categories: [RegExp, string][] = [
-    [/combat|fight|damage|sword|weapon|attack|enemy|health/, `-- Combat System (TXMO local)
+    [/combat|fight|damage|sword|weapon|attack|enemy|health/, `-- Combat System (TXMO)
 local CombatService = {}
 
 function CombatService.dealDamage(target, damage)
@@ -93,7 +141,7 @@ function CombatService.createProjectile(startPos, direction, speed, damage)
 end
 
 return CombatService`],
-    [/gui|ui|screen|button|frame|menu|hud|dashboard/, `-- UI System (TXMO local)
+    [/gui|ui|screen|button|frame|menu|hud|dashboard/, `-- UI System (TXMO)
 local function createFrame(name, parent, size, pos, color, trans)
 \tlocal f = Instance.new("Frame")
 \tf.Name, f.Parent, f.Size, f.Position = name, parent, size or UDim2.new(0,200,0,100), pos or UDim2.new(0.5,-100,0.5,-50)
@@ -122,7 +170,7 @@ local btn = createButton("Play", main, UDim2.new(0,200,0,45), UDim2.new(0.5,-100
 btn.MouseButton1Click:Connect(function() print("Play!") end)
 
 print("TXMO: UI generated")`],
-    [/move|walk|run|speed|character|dash|jump|sprint/, `-- Movement System (TXMO local)
+    [/move|walk|run|speed|character|dash|jump|sprint/, `-- Movement System (TXMO)
 local Movement = {}
 
 function Movement.setWalkSpeed(char, speed)
@@ -157,7 +205,7 @@ function Movement.createSprint(char, sprintSpeed)
 end
 
 return Movement`],
-    [/leaderboard|currency|shop|money|coins|score|points|economy/, `-- Economy System (TXMO local)
+    [/leaderboard|currency|shop|money|coins|score|points|economy/, `-- Economy System (TXMO)
 local Economy = {}
 local data = {}
 
@@ -203,14 +251,13 @@ return Economy`],
 
   return {
     model: model.name, provider: 'local',
-    output: `-- Generated by TXMO (local model)
+    output: `-- Generated by TXMO
 -- Prompt: ${prompt}
 
 local module = {}
 
 function module.setup()
 \tprint("TXMO generating: ${prompt}")
-\t-- Add your custom logic here
 end
 
 return module`,

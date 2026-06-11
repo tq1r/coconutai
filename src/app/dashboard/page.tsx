@@ -194,64 +194,61 @@ export default function DashboardPage() {
   return (
     <ErrorBoundary>
       <div className="h-screen flex flex-col" style={{ background: 'var(--bg-gradient)' }}>
-        {/* Navbar */}
+        {/* ── Navbar ─────────────────────────────────────── */}
         <header className="flex items-center gap-3 px-5 h-12" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xl drop-shadow-sm">🥥</span>
-            <span className="font-bold text-base" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
+            <span className="text-xl">🥥</span>
+            <span className="font-bold text-sm" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
             <span className="text-xs" style={{ color: 'var(--border-strong)' }}>|</span>
-            <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-sm rounded-xl px-3 py-1.5 outline-none border max-w-[180px] truncate" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
+            <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-xs rounded-lg px-2.5 py-1.5 outline-none max-w-[160px] truncate" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
               {workspaces.length ? workspaces.map((w) => <option key={w.id} value={w.workspace_name} className="truncate">{w.workspace_name}</option>) : <option className="truncate">{DEFAULT_WORKSPACE}</option>}
             </select>
           </div>
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <div className="flex items-center gap-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
             {/* Studio Sync */}
-            <div className="flex items-center gap-1.5 rounded-xl px-3 py-1 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
-              <span className="text-[10px] font-semibold uppercase tracking-wider">Studio</span>
-              <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Code" className="w-16 bg-transparent text-xs outline-none uppercase" maxLength={6} style={{ color: 'var(--text-primary)' }} />
+            <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+              <span className="label" style={{ fontSize: 10 }}>Studio</span>
+              <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Code" className="w-14 bg-transparent text-xs outline-none uppercase" maxLength={6} style={{ color: 'var(--text-primary)' }} />
               {pluginStatus ? (
                 <span className="text-[10px] font-medium whitespace-nowrap" style={{ color: 'var(--accent)' }}>{pluginStatus}</span>
               ) : (
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${pluginCode.trim().length === 6 ? 'bg-ocean-400' : ''}`} style={{ background: pluginCode.trim().length === 6 ? 'var(--accent)' : 'var(--border-strong)' }} />
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: pluginCode.trim().length === 6 ? 'var(--accent)' : 'var(--border-strong)' }} />
               )}
             </div>
 
             {/* Roblox link */}
-            <a href="/api/auth/roblox" className="px-2 py-1 rounded-xl font-medium border whitespace-nowrap" style={{ background: robloxLinked ? 'var(--accent-light)' : 'var(--bg-surface)', color: robloxLinked ? 'var(--accent)' : 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
+            <a href="/api/auth/roblox" className="px-2.5 py-1.5 rounded-lg font-medium border no-underline" style={{ background: robloxLinked ? 'var(--accent-soft)' : 'var(--bg-surface)', color: robloxLinked ? 'var(--accent)' : 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
               {robloxLinked ? `🔗 ${robloxUsername}` : 'Link Roblox'}
             </a>
 
             <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: syncStatus === 'Connected' ? 'var(--accent)' : 'var(--text-muted)' }} />
             <span className="hidden sm:inline">{syncStatus}</span>
-            <span className="text-xs hidden sm:inline" style={{ color: 'var(--border-strong)' }}>|</span>
+            <span className="hidden sm:inline text-[10px]" style={{ color: 'var(--border-strong)' }}>|</span>
 
             {/* Role badge */}
-            {userRole === 'premium' && <span className="px-2 py-0.5 rounded-lg font-semibold whitespace-nowrap" style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#92400e' }}>✦ PREMIUM</span>}
-            {userRole === 'admin' && <span className="px-2 py-0.5 rounded-lg font-semibold whitespace-nowrap" style={{ background: 'linear-gradient(135deg, #fca5a5, #ef4444)', color: '#7f1d1d' }}>✦ ADMIN</span>}
+            {userRole === 'premium' && <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#92400e' }}>✦ PREMIUM</span>}
+            {userRole === 'admin' && <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fca5a5, #ef4444)', color: '#7f1d1d' }}>✦ ADMIN</span>}
 
-            {/* Theme picker */}
             <ThemePicker />
-
-            {/* User name */}
-            <span className="px-2 py-1 rounded-xl border font-medium truncate max-w-[100px]" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>{userName}</span>
+            <span className="px-2.5 py-1.5 rounded-lg border font-medium truncate max-w-[100px] text-xs" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>{userName}</span>
           </div>
         </header>
 
-        {/* IDE Body */}
-        <div className="flex flex-1 overflow-hidden gap-2 p-2 min-h-0">
+        {/* ── IDE Body ───────────────────────────────────── */}
+        <div className="flex flex-1 overflow-hidden gap-2.5 p-2.5 min-h-0">
           {/* Explorer */}
           {showExplorer && (
-            <aside className="w-56 flex flex-col flex-shrink-0 rounded-2xl border overflow-hidden" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center justify-between px-4 h-9 border-b text-xs" style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
-                <span className="font-semibold tracking-wide" style={{ color: 'var(--text-secondary)' }}>📁 EXPLORER</span>
-                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="w-5 h-5 rounded-full flex items-center justify-center transition-all hover:shadow-md flex-shrink-0 cursor-pointer border-0" style={{ background: 'var(--bg-elevated)', color: 'var(--accent)' }}>+</button>
+            <aside className="w-56 flex flex-col flex-shrink-0 panel overflow-hidden">
+              <div className="flex items-center justify-between px-4 h-11 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                <span className="label">Explorer</span>
+                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
               </div>
               {showNewFileInput && (
-                <div className="p-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                  <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full text-sm rounded-xl px-3 py-1.5 outline-none placeholder-stone-300 border" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }} autoFocus />
+                <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full input-base text-xs" style={{ padding: '8px 12px' }} autoFocus />
                 </div>
               )}
               <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
@@ -264,7 +261,7 @@ export default function DashboardPage() {
                       const newFile: ScriptFile = { id: project.id, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId: project.id, updatedAt: new Date().toISOString() };
                       setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
                     }
-                  }} className={`w-full text-left px-3 py-2 text-sm rounded-xl transition-all truncate border ${activeProjectId === project.id ? 'font-medium' : 'border-transparent hover:shadow-sm'}`} style={activeProjectId === project.id ? { background: 'var(--accent-light)', color: 'var(--accent)', borderColor: 'var(--border-color)' } : { color: 'var(--text-secondary)', background: 'transparent' }}>
+                  }} className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all truncate border cursor-pointer ${activeProjectId === project.id ? 'font-medium' : 'border-transparent'}`} style={activeProjectId === project.id ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--border-color)' } : { color: 'var(--text-secondary)', background: 'transparent' }}>
                     📄 {project.name}.lua
                   </button>
                 ))}
@@ -274,59 +271,91 @@ export default function DashboardPage() {
           )}
 
           {/* Editor */}
-          <main className="flex-1 flex flex-col overflow-hidden min-w-0 rounded-2xl border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)' }}>
+          <main className="flex-1 flex flex-col overflow-hidden min-w-0 panel" style={{ background: 'var(--bg-editor)' }}>
             <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
           </main>
 
           {/* Chat */}
           {showChat && (
-            <aside className="w-80 flex flex-col flex-shrink-0 rounded-2xl border overflow-hidden" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center justify-between px-4 h-9 border-b text-xs" style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
-                <span className="font-semibold tracking-wide" style={{ color: 'var(--text-secondary)' }}>🤖 AI ASSISTANT</span>
-                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-xs rounded-xl px-2 py-1 outline-none border max-w-[130px] truncate" style={{ background: 'var(--bg-surface)', color: 'var(--accent)', borderColor: 'var(--border-color)' }}>
+            <aside className="w-80 flex flex-col flex-shrink-0 panel overflow-hidden">
+              <div className="flex items-center justify-between px-4 h-11 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                <span className="label">AI Assistant</span>
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[11px] rounded-lg px-2 py-1 outline-none max-w-[130px] truncate font-medium" style={{ background: 'var(--bg-surface)', color: 'var(--accent)', border: '1px solid var(--border-color)' }}>
                   {models.map((m) => <option key={m.id} value={m.id}>{m.name} {m.premium ? '✦' : '⊙'}</option>)}
                 </select>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {chatHistory.length === 0 ? (
-                  <div className="text-sm text-center mt-12" style={{ color: 'var(--text-muted)' }}>
-                    <p className="text-4xl mb-4 drop-shadow-sm">🏝️</p>
-                    <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate Roblox</p>
-                    <p>scripts, UI, or game systems</p>
+                  <div className="text-center mt-14 px-4">
+                    <p className="text-3xl mb-3">🏝️</p>
+                    <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate Roblox code</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, economy, or anything</p>
                   </div>
                 ) : chatHistory.map((msg, i) => (
-                  <div key={i} className={`text-sm leading-relaxed ${msg.role === 'assistant' ? 'rounded-xl p-3 border' : ''}`} style={msg.role === 'assistant' ? { background: 'var(--bg-elevated)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' } : { color: 'var(--text-secondary)' }}>
-                    <div className="font-semibold mb-1 text-xs uppercase tracking-wider">{msg.role === 'assistant' ? '🤖 Coconut AI' : 'You'}</div>
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{msg.text}</pre>
-                    {msg.role === 'assistant' && (msg.text.includes('function') || msg.text.includes('local ')) && (
-                      <button onClick={() => applyCodeFromChat(msg.text)} className="mt-1.5 text-xs text-white px-3 py-1 rounded-lg font-medium shadow-sm hover:shadow-md transition-all border-0 cursor-pointer" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>Apply to editor</button>
+                  <div key={i}>
+                    {/* User message */}
+                    {msg.role === 'user' && (
+                      <div className="flex items-start gap-2">
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
+                        <div>
+                          <p className="text-[10px] font-semibold mb-0.5" style={{ color: 'var(--text-muted)' }}>You</p>
+                          <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{msg.text}</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Assistant message */}
+                    {msg.role === 'assistant' && (
+                      <div className="rounded-xl p-3 border" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }}>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <span>🤖</span>
+                          <span className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Coconut AI</span>
+                        </div>
+                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>{msg.text}</pre>
+                        {(msg.text.includes('function') || msg.text.includes('local ')) && (
+                          <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-xs text-white px-3 py-1.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all border-0 cursor-pointer" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
+                            Apply to Editor
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-4 border-t" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-elevated)' }}>
-                {error && <p className="text-xs mb-2 font-medium" style={{ color: '#ef4444' }}>{error}</p>}
-                <textarea rows={2} value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())} placeholder="Describe the script or system you want..." className="w-full resize-none text-sm rounded-xl px-4 py-2.5 outline-none border" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }} />
-                <button onClick={handleGenerate} disabled={isGenerating} className="mt-2 w-full py-2.5 disabled:opacity-50 text-sm font-semibold rounded-xl text-white transition-all shadow-md hover:shadow-lg border-0 cursor-pointer" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
-                  {isGenerating ? 'Generating...' : '🌴 Generate'}
+
+              {/* Input */}
+              <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-elevated)' }}>
+                {error && <p className="text-xs mb-2 font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+                <textarea
+                  rows={2}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
+                  placeholder="Describe what to build..."
+                  className="w-full resize-none text-sm rounded-xl px-3.5 py-2.5 input-base"
+                  style={{ fontSize: 13, lineHeight: 1.5 }}
+                />
+                <button onClick={handleGenerate} disabled={isGenerating} className="btn-primary mt-2 w-full text-xs" style={{ padding: '9px 0' }}>
+                  {isGenerating ? 'Generating...' : 'Generate'}
                 </button>
               </div>
             </aside>
           )}
         </div>
 
-        {/* Status Bar */}
+        {/* ── Status Bar ─────────────────────────────────── */}
         <footer className="flex items-center justify-between px-5 h-7 border-t text-[10px]" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
           <div className="flex items-center gap-4">
-            <button onClick={() => setShowExplorer(!showExplorer)} className="px-2 py-0.5 rounded-lg transition-all cursor-pointer border-0" style={{ color: 'var(--text-muted)', background: 'transparent' }}>{showExplorer ? '📁 Hide Explorer' : '📁 Show Explorer'}</button>
+            <button onClick={() => setShowExplorer(!showExplorer)} className="px-2 py-0.5 rounded-lg transition-all cursor-pointer border-0 text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent' }}>{showExplorer ? '📁 Hide Explorer' : '📁 Show Explorer'}</button>
             <span>Ln 1</span>
             <span className="hidden sm:inline" style={{ color: 'var(--border-strong)' }}>|</span>
-            <span className="hidden sm:inline">Lua</span>
+            <span className="hidden sm:inline">Luau</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline">✦ Premium ⊙ Free</span>
-            <button onClick={() => setShowChat(!showChat)} className="px-2 py-0.5 rounded-lg transition-all cursor-pointer border-0" style={{ color: 'var(--text-muted)', background: 'transparent' }}>{showChat ? '🤖 Hide Chat' : '🤖 Show Chat'}</button>
+            <span className="hidden sm:inline">✦ Premium  ⊙ Free</span>
+            <button onClick={() => setShowChat(!showChat)} className="px-2 py-0.5 rounded-lg transition-all cursor-pointer border-0 text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent' }}>{showChat ? '🤖 Hide Chat' : '🤖 Show Chat'}</button>
           </div>
         </footer>
       </div>
