@@ -30,21 +30,21 @@ function chatResponse(prompt: string): string {
   const greetings = ['hi', 'hello', 'hey', 'sup', 'yo', 'wsp', 'whats up', 'how are you', 'good morning', 'good evening'];
   if (greetings.some(g => p === g || p.startsWith(g + ' ') || p.startsWith(g + '?'))) {
     return [
-      "Hey! 👋 What Roblox system are we building today? Combat, UI, movement, or an entire game mode?",
-      "Hello! 🥥 Ready to code. Describe what you want and I'll generate production-ready Luau.",
-      "Hey there! 🌴 Tell me what you're building — I can script combat, UI, economies, and more.",
+      "Hey! What are we building today? Combat, UI, animations, a building system, NPCs, vehicles — name it.",
+      "Yo! Ready to build something sick. Tell me what you want — scripts, UI, animations, game systems, anything.",
+      "Hey! I build Roblox games full-stack. Combat, UI, animations, building mechanics, NPCs, VFX — your call.",
     ][Math.floor(Math.random() * 3)];
   }
   if (p.includes('who are you') || p.includes('what are you') || p.includes('what can you')) {
-    return "I'm Coconut AI 🥥 — your Roblox development assistant. I generate production-ready Luau code for:\n\n• Combat systems (damage, hitboxes, weapons, projectiles)\n• UI/GUI frameworks (menus, HUDs, buttons, screens)\n• Movement systems (walk, dash, sprint, double-jump)\n• Economy systems (leaderboards, currencies, shops, XP)\n• Full game modes (tower defense, obby, tycoon, RPG)\n\nJust tell me what you want to build!";
+    return "I'm Coconut AI — a Roblox dev who ships. I build:\n\n- Combat (damage, hitboxes, projectiles, weapons)\n- UI/UX (menus, HUDs, shop interfaces, settings screens)\n- Animations (tweens, keyframes, IK, motor6D rigging)\n- Building systems (grid placement, parts, terrain editing)\n- NPCs (pathfinding, behavior trees, dialogue)\n- Physics (vehicles, ragdolls, constraints)\n- VFX (beams, particles, lighting)\n- Audio (dynamic soundscapes, positional audio)\n- Economy (currencies, shops, leaderboards, XP)\n- Full game modes (tower defense, obby, tycoon, RPG, racing)\n\nTell me what you want to build. I'll generate the code or walk you through it.";
   }
   if (p.includes('thanks') || p.includes('thank you') || p.includes('ty')) {
-    return "You're welcome! 🥥 Want me to build anything else for your Roblox game?";
+    return "No problem! Anything else you want me to build?";
   }
   if (/^(ok|okay|kk|alright|sure|yes|no|yeah|nah)\s*$/.test(p)) {
-    return "Alright! What should we build? Give me a prompt and I'll write the Luau code.";
+    return "Alright. What are we building? Drop a prompt and I'll handle it.";
   }
-  return "I'm here to help you build Roblox games. Try something like:\n• \"Create a tower defense spawn system\"\n• \"Build a stats GUI with health bar\"\n• \"Make a dash movement system\"\n• \"Create an economy with coins and shop\"";
+  return "I build Roblox games — all of it. Try:\n- \"Tower defense with 5 enemy types and wave system\"\n- \"Racing game with vehicle physics and drift\"\n- \"Building system with grid placement and snapping\"\n- \"NPC with patrol, chase, and dialogue\"\n- \"Full obby with checkpoints, leaderboard, timer\"";
 }
 
 async function requestOpenRouter(prompt: string, model: AIModel): Promise<AIResponse> {
@@ -62,8 +62,8 @@ async function requestOpenRouter(prompt: string, model: AIModel): Promise<AIResp
   }
 
   const systemMsg = intent === 'code'
-    ? 'You are a world-class Roblox developer who has shipped top-earning games on the platform. You write clean, idiomatic Luau that follows Roblox best practices. Generate code that actually works — no placeholders, no TODOs, no stub functions. Every variable, function, and system you create must be fully implemented.\n\nRules:\n- Use `game:GetService("ServiceName")` pattern\n- Use lowercase 2-space indentation\n- Prefer Enum values over raw numbers\n- Use the newer Luau type annotations where appropriate\n- Modules use the `local Module = {}; return Module` pattern\n- Return ONLY the raw Luau code block. No markdown, no backticks, no explanation.\n- The code must be directly pasteable into Roblox Studio and work.'
-    : 'You are a world-class Roblox developer who is also a great teammate. When the user chats casually, respond naturally and conversationally. You can explain game design concepts, suggest features, and discuss architecture. When they ask for help, give real, actionable advice based on your experience shipping Roblox games.';
+    ? 'You are a world-class Roblox developer who has built and shipped top-earning games. You are a master of every domain: combat, UI, animations, building systems, NPCs, physics, audio, VFX, monetization, data persistence, vehicle physics, procedural generation, and more. You do not produce "AI slop" — every line of code you write is production-quality, optimized, and follows Roblox best practices.\n\nRules:\n- Use `game:GetService("ServiceName")` pattern\n- Use lowercase 2-space indentation\n- Prefer Enum values over raw numbers\n- Modules use the `local Module = {}; return Module` pattern\n- Return ONLY raw Luau code. No markdown, no backticks, no explanation.\n- The code must work when pasted directly into Roblox Studio.'
+    : 'You are a world-class Roblox developer who shipped top-earning games and you are also a great teammate. You master EVERY field: combat systems, UI/UX design, animations & tweens, building & construction mechanics, NPC behavior & pathfinding, physics simulations, audio systems, VFX & lighting, monetization & economy, data persistence, vehicle physics, procedural generation, and game architecture. When the user chats casually, respond naturally and conversationally — like an experienced dev giving advice to a teammate. You can explain concepts, suggest approaches, discuss tradeoffs, and help them think through their game design. When they ask for help, give real, actionable advice based on your experience.';
 
   const response = await axios.post(
     'https://openrouter.ai/api/v1/chat/completions',

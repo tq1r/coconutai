@@ -211,11 +211,20 @@ export default function DashboardPage() {
             {/* Studio Sync */}
             <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
               <span className="label" style={{ fontSize: 10 }}>Studio</span>
-              <input value={pluginCode} onChange={(e) => setPluginCode(e.target.value)} placeholder="Code" className="w-14 bg-transparent text-xs outline-none uppercase" maxLength={6} style={{ color: 'var(--text-primary)' }} />
-              {pluginStatus ? (
-                <span className="text-[10px] font-medium whitespace-nowrap" style={{ color: 'var(--accent)' }}>{pluginStatus}</span>
-              ) : (
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: pluginCode.trim().length === 6 ? 'var(--accent)' : 'var(--border-strong)' }} />
+              <input
+                value={pluginCode}
+                onChange={(e) => setPluginCode(e.target.value.toUpperCase())}
+                placeholder="XXX XXX"
+                className="w-16 bg-transparent text-xs outline-none uppercase tracking-widest font-mono"
+                maxLength={6}
+                style={{ color: 'var(--text-primary)' }}
+              />
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0`} style={{ background: pluginCode.trim().length === 6 ? 'var(--accent)' : 'var(--border-strong)' }} />
+              {pluginCode.trim().length === 6 && (
+                <span className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>Synced</span>
+              )}
+              {pluginStatus && (
+                <span className="text-[10px] font-medium whitespace-nowrap" style={{ color: pluginStatus.includes('error') || pluginStatus.includes('fail') ? 'var(--danger)' : 'var(--accent)' }}>{pluginStatus}</span>
               )}
             </div>
 
