@@ -9,7 +9,7 @@ export async function getTokenFromRequest(request: NextRequest): Promise<string 
   return request.cookies.get('coconut-token')?.value ?? null;
 }
 
-export async function withAuth(
+export function withAuth(
   handler: (
     req: NextRequest,
     context: {
