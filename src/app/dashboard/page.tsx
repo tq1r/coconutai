@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import type { AIModel, AIResponse, WorkspaceProject, WorkspaceSession, ScriptFile } from '@/types';
 
 const EditorPanel = dynamic(() => import('@/components/EditorPanel'), { ssr: false });
@@ -230,7 +231,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       {/* Top Navbar */}
       <header className="flex items-center justify-between px-4 h-11 bg-[#0d0b0a] border-b border-[#2a2620] flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -406,6 +407,6 @@ export default function DashboardPage() {
           </button>
         </div>
       </footer>
-    </>
+    </ErrorBoundary>
   );
 }
