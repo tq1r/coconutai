@@ -73,6 +73,15 @@ export const aiModels: AIModel[] = [
     context_window: 4096,
     tags: ['mistral', 'open-source', 'creative'],
   },
+  {
+    id: 'txmo',
+    name: 'TXMO',
+    provider: 'local',
+    description: 'Premium local AI model. Ultra-fast inference, no external API calls. Exclusive to premium subscribers.',
+    premium: true,
+    context_window: 16000,
+    tags: ['local', 'premium', 'fast', 'exclusive'],
+  },
 ];
 
 export function getModelById(modelId: string) {

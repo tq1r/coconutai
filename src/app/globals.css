@@ -19,6 +19,7 @@
   --color-ocean-500: #14b8a6;
   --color-ocean-600: #0d9488;
   --color-ocean-700: #0f766e;
+  --color-ocean-800: #115e59;
 
   --color-sand-50: #fffbeb;
   --color-sand-100: #fff3d6;
@@ -26,7 +27,6 @@
   --color-sand-300: #f5c986;
   --color-sand-400: #e8ad5e;
   --color-sand-500: #d4913d;
-  --color-sand-600: #b0752e;
 
   --color-coral-50: #fff7ed;
   --color-coral-100: #ffedd5;
@@ -48,19 +48,113 @@
   --color-stone-900: #1c1917;
 }
 
+/* Theme: Beach (default) */
+:root, [data-theme="beach"] {
+  --bg-page: #fdfaf5;
+  --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #fffbeb 100%);
+  --bg-surface: rgba(255,255,255,0.7);
+  --bg-surface-solid: #ffffff;
+  --bg-elevated: rgba(255,255,255,0.85);
+  --bg-editor: rgba(255,255,255,0.3);
+  --bg-code: #ffffff;
+  --border-color: rgba(222, 214, 200, 0.5);
+  --border-strong: #e7e5e4;
+  --text-primary: #292524;
+  --text-secondary: #78716c;
+  --text-muted: #a8a29e;
+  --text-inverse: #ffffff;
+  --accent: #14b8a6;
+  --accent-hover: #0d9488;
+  --accent-light: #f0fdfa;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --line-numbers: #d6d3d1;
+}
+
+/* Theme: Dark */
+[data-theme="dark"] {
+  --bg-page: #0c0a09;
+  --bg-gradient: linear-gradient(135deg, #0c0a09 0%, #1c1917 50%, #0c0a09 100%);
+  --bg-surface: rgba(28,25,23,0.85);
+  --bg-surface-solid: #1c1917;
+  --bg-elevated: rgba(41,37,36,0.9);
+  --bg-editor: rgba(28,25,23,0.95);
+  --bg-code: #1c1917;
+  --border-color: rgba(68,64,60,0.6);
+  --border-strong: #44403c;
+  --text-primary: #f5f5f4;
+  --text-secondary: #a8a29e;
+  --text-muted: #78716c;
+  --text-inverse: #292524;
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-light: rgba(45,212,191,0.1);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+  --line-numbers: #57534e;
+}
+
+/* Theme: Ocean */
+[data-theme="ocean"] {
+  --bg-page: #f0f9ff;
+  --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdfa 100%);
+  --bg-surface: rgba(255,255,255,0.75);
+  --bg-surface-solid: #ffffff;
+  --bg-elevated: rgba(255,255,255,0.9);
+  --bg-editor: rgba(255,255,255,0.4);
+  --bg-code: #ffffff;
+  --border-color: rgba(186,230,253,0.6);
+  --border-strong: #bae6fd;
+  --text-primary: #0c4a6e;
+  --text-secondary: #0369a1;
+  --text-muted: #7dd3fc;
+  --text-inverse: #ffffff;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-light: #f0f9ff;
+  --shadow-sm: 0 1px 2px rgba(2,132,199,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(2,132,199,0.15);
+  --shadow-lg: 0 10px 15px -3px rgba(2,132,199,0.2);
+  --line-numbers: #bae6fd;
+}
+
+/* Theme: Sunset */
+[data-theme="sunset"] {
+  --bg-page: #fff7ed;
+  --bg-gradient: linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fef2f2 100%);
+  --bg-surface: rgba(255,255,255,0.75);
+  --bg-surface-solid: #ffffff;
+  --bg-elevated: rgba(255,255,255,0.9);
+  --bg-editor: rgba(255,255,255,0.4);
+  --bg-code: #ffffff;
+  --border-color: rgba(254,215,170,0.6);
+  --border-strong: #fed7aa;
+  --text-primary: #7c2d12;
+  --text-secondary: #9a3412;
+  --text-muted: #fdba74;
+  --text-inverse: #ffffff;
+  --accent: #f97316;
+  --accent-hover: #ea580c;
+  --accent-light: #fff7ed;
+  --shadow-sm: 0 1px 2px rgba(249,115,22,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(249,115,22,0.15);
+  --shadow-lg: 0 10px 15px -3px rgba(249,115,22,0.2);
+  --line-numbers: #fed7aa;
+}
+
 html, body {
   height: 100%;
-  background: #fdfaf5;
-  color: #292524;
+  background: var(--bg-page);
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-body { overflow-x: hidden; overflow-y: hidden; }
-#__next, [data-nextjs-root] { height: 100%; }
+body { overflow: hidden; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f5f0ea; }
-::-webkit-scrollbar-thumb { background: #d4c8ba; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #b8aa9a; }
-
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

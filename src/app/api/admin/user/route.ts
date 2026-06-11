@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/auth-utils';
-import { updateProfile } from '@/lib/db';
+import { updateProfile, findProfileByEmail, findProfileByUsername, findProfileById } from '@/lib/db';
 
 export const PATCH = withAuth(async (request: NextRequest, context) => {
   if (context.role !== 'admin') {
@@ -15,13 +15,33 @@ export const PATCH = withAuth(async (request: NextRequest, context) => {
     return NextResponse.json({ error: 'Target user is required' }, { status: 400 });
   }
 
+  // Look up user by ID, email, or username
+  let user = await findProfileById(targetUserId);
+  if (!user) user = await findProfileByEmail(targetUserId);
+  if (!user) user = await findProfileByUsername(targetUserId);
+
+  if (!user) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
   const updates: Record<string, any> = {};
   if (role) updates.role = role;
   if (subscription_tier) updates.subscription_tier = subscription_tier;
   if (typeof subscription_active === 'boolean') updates.subscription_active = subscription_active;
-  if (subscription_expires_at) updates.subscription_expires_at = subscription_expires_at;
+  if (subscription_expires_at !== undefined) updates.subscription_expires_at = subscription_expires_at;
 
-  await updateProfile(targetUserId, updates);
+  await updateProfile(user.id, updates);
 
-  return NextResponse.json({ success: true, message: 'User updated successfully' }, { status: 200 });
+  return NextResponse.json({
+    success: true,
+    message: `${user.username} updated successfully`,
+    user: { id: user.id, username: user.username, email: user.email, role: updates.role || user.role, subscription_active: typeof subscription_active === 'boolean' ? subscription_active : user.subscription_active },
+  }, { status: 200 });
+});
+
+export const GET = withAuth(async (request: NextRequest, context) => {
+  if (context.role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  return NextResponse.json({ success: true, message: 'Admin API ready' });
 });

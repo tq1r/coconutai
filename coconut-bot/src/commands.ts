@@ -25,82 +25,114 @@ async function adminApiCall(endpoint: string, method: 'GET' | 'PATCH' = 'GET', b
   }
 }
 
+function formatDuration(ms: number): string {
+  if (ms <= 0) return 'Lifetime';
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  if (days >= 365) return `${Math.floor(days / 365)} year(s)`;
+  if (days >= 30) return `${Math.floor(days / 30)} month(s)`;
+  return `${days} day(s)`;
+}
+
 export const botCommands: BotCommand[] = [
   {
     data: new SlashCommandBuilder()
-      .setName('premium')
-      .setDescription('Grant premium access to a user')
-      .addStringOption((opt) => opt.setName('email').setDescription('User email').setRequired(true))
-      .addStringOption((opt) => opt.setName('tier').setDescription('Tier (plus/pro)').setRequired(true)),
+      .setName('add')
+      .setDescription('Grant premium to a user')
+      .addStringOption((opt) =>
+        opt.setName('type').setDescription('Type of grant')
+          .setRequired(true)
+          .addChoices(
+            { name: 'premium', value: 'premium' },
+          ))
+      .addUserOption((opt) =>
+        opt.setName('user').setDescription('The Discord user').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('duration').setDescription('How long?')
+          .setRequired(true)
+          .addChoices(
+            { name: 'monthly (30 days)', value: 'monthly' },
+            { name: 'lifetime (never expires)', value: 'lifetime' },
+          )),
     execute: async (interaction) => {
       if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: '❌ Not authorized.', ephemeral: true });
+        await interaction.reply({ content: '❌ You are not authorized to use this command.', ephemeral: true });
         return;
       }
-      const email = interaction.options.getString('email', true);
-      const tier = interaction.options.getString('tier', true);
-      const result = await adminApiCall('user', 'PATCH', { targetUserId: email, subscription_tier: tier, subscription_active: true });
-      await interaction.reply({ content: result.success ? `✅ Premium ${tier} granted to ${email}` : `❌ ${result.error}`, ephemeral: true });
+      const type = interaction.options.getString('type', true);
+      const targetUser = interaction.options.getUser('user', true);
+      const duration = interaction.options.getString('duration', true);
+
+      if (type === 'premium') {
+        const expiresAt = duration === 'lifetime' ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        const result = await adminApiCall('user', 'PATCH', {
+          targetUserId: targetUser.email || targetUser.username,
+          role: 'premium',
+          subscription_tier: 'pro',
+          subscription_active: true,
+          subscription_expires_at: expiresAt,
+        });
+        const durationText = duration === 'lifetime' ? '**Lifetime**' : '**30 days (monthly)**';
+        if (result.success) {
+          await interaction.reply({
+            content: `✅ **${targetUser.tag}** has been granted ${durationText} premium access!\nThey can now use all premium AI models including TXMO.`,
+          });
+        } else {
+          await interaction.reply({
+            content: `❌ Failed: ${result.error}\nMake sure the user has a Coconut AI account linked to their Discord.`,
+            ephemeral: true,
+          });
+        }
+      }
     },
   },
   {
     data: new SlashCommandBuilder()
-      .setName('removepremium')
-      .setDescription('Remove premium access from a user')
-      .addStringOption((opt) => opt.setName('email').setDescription('User email').setRequired(true)),
+      .setName('remove')
+      .setDescription('Remove premium from a user')
+      .addStringOption((opt) =>
+        opt.setName('type').setDescription('Type').setRequired(true)
+          .addChoices({ name: 'premium', value: 'premium' }))
+      .addUserOption((opt) =>
+        opt.setName('user').setDescription('The Discord user').setRequired(true)),
     execute: async (interaction) => {
       if (!isAdmin(interaction.user.id)) {
         await interaction.reply({ content: '❌ Not authorized.', ephemeral: true });
         return;
       }
-      const email = interaction.options.getString('email', true);
-      const result = await adminApiCall('user', 'PATCH', { targetUserId: email, subscription_active: false });
-      await interaction.reply({ content: result.success ? `✅ Premium removed from ${email}` : `❌ ${result.error}`, ephemeral: true });
+      const targetUser = interaction.options.getUser('user', true);
+      const result = await adminApiCall('user', 'PATCH', {
+        targetUserId: targetUser.email || targetUser.username,
+        subscription_active: false,
+        role: 'user',
+      });
+      await interaction.reply({
+        content: result.success
+          ? `✅ Premium removed from **${targetUser.tag}**`
+          : `❌ ${result.error}`,
+        ephemeral: true,
+      });
     },
   },
   {
     data: new SlashCommandBuilder()
-      .setName('admin')
-      .setDescription('Grant admin role to a user')
-      .addStringOption((opt) => opt.setName('email').setDescription('User email').setRequired(true)),
+      .setName('lookup')
+      .setDescription('Look up a user by Discord username or email')
+      .addUserOption((opt) =>
+        opt.setName('user').setDescription('The Discord user').setRequired(true)),
     execute: async (interaction) => {
       if (!isAdmin(interaction.user.id)) {
         await interaction.reply({ content: '❌ Not authorized.', ephemeral: true });
         return;
       }
-      const email = interaction.options.getString('email', true);
-      const result = await adminApiCall('user', 'PATCH', { targetUserId: email, role: 'admin' });
-      await interaction.reply({ content: result.success ? `✅ Admin granted to ${email}` : `❌ ${result.error}`, ephemeral: true });
-    },
-  },
-  {
-    data: new SlashCommandBuilder()
-      .setName('removeadmin')
-      .setDescription('Remove admin role from a user')
-      .addStringOption((opt) => opt.setName('email').setDescription('User email').setRequired(true)),
-    execute: async (interaction) => {
-      if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: '❌ Not authorized.', ephemeral: true });
-        return;
-      }
-      const email = interaction.options.getString('email', true);
-      const result = await adminApiCall('user', 'PATCH', { targetUserId: email, role: 'user' });
-      await interaction.reply({ content: result.success ? `✅ Admin removed from ${email}` : `❌ ${result.error}`, ephemeral: true });
-    },
-  },
-  {
-    data: new SlashCommandBuilder()
-      .setName('user')
-      .setDescription('Look up a user account')
-      .addStringOption((opt) => opt.setName('email').setDescription('User email').setRequired(true)),
-    execute: async (interaction) => {
-      if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: '❌ Not authorized.', ephemeral: true });
-        return;
-      }
-      const email = interaction.options.getString('email', true);
-      // This would need a GET /api/admin/user endpoint
-      await interaction.reply({ content: `🔍 Lookup for ${email} - API integration ready.`, ephemeral: true });
+      const targetUser = interaction.options.getUser('user', true);
+      const result = await adminApiCall('user', 'GET');
+      const userInfo = result.user
+        ? `Email: ${result.user.email || 'N/A'}\nRole: ${result.user.role || 'user'}\nPremium: ${result.user.subscription_active ? '✅ Active' : '❌ Inactive'}\nExpires: ${result.user.subscription_expires_at ? new Date(result.user.subscription_expires_at).toLocaleDateString() : 'Never'}`
+        : 'No account found. User may not have registered on the website.';
+      await interaction.reply({
+        content: `🔍 **${targetUser.tag}**\n\`\`\`${userInfo}\`\`\``,
+        ephemeral: true,
+      });
     },
   },
   {
@@ -113,38 +145,6 @@ export const botCommands: BotCommand[] = [
         return;
       }
       await interaction.reply({ content: '📊 Platform stats coming soon.', ephemeral: true });
-    },
-  },
-  {
-    data: new SlashCommandBuilder()
-      .setName('ban')
-      .setDescription('Ban a user')
-      .addStringOption((opt) => opt.setName('email').setDescription('User email').setRequired(true))
-      .addStringOption((opt) => opt.setName('reason').setDescription('Reason').setRequired(false)),
-    execute: async (interaction) => {
-      if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: '❌ Not authorized.', ephemeral: true });
-        return;
-      }
-      const email = interaction.options.getString('email', true);
-      const reason = interaction.options.getString('reason') || 'No reason';
-      const result = await adminApiCall('user', 'PATCH', { targetUserId: email, role: 'banned' });
-      await interaction.reply({ content: result.success ? `✅ ${email} banned. Reason: ${reason}` : `❌ ${result.error}`, ephemeral: true });
-    },
-  },
-  {
-    data: new SlashCommandBuilder()
-      .setName('unban')
-      .setDescription('Unban a user')
-      .addStringOption((opt) => opt.setName('email').setDescription('User email').setRequired(true)),
-    execute: async (interaction) => {
-      if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: '❌ Not authorized.', ephemeral: true });
-        return;
-      }
-      const email = interaction.options.getString('email', true);
-      const result = await adminApiCall('user', 'PATCH', { targetUserId: email, role: 'user' });
-      await interaction.reply({ content: result.success ? `✅ ${email} unbanned.` : `❌ ${result.error}`, ephemeral: true });
     },
   },
 ];
