@@ -1,0 +1,74 @@
+-- Coconut AI database schema
+-- Data is stored in data/coconut.json (JSON file database)
+-- This file documents the schema structure for reference
+
+-- profiles: JSON object keyed by user UUID
+-- {
+--   "id": "uuid",
+--   "email": "string",
+--   "username": "string (unique)",
+--   "display_name": "string",
+--   "avatar_url": "string|null",
+--   "role": "user|premium|admin",
+--   "subscription_tier": "free|plus|pro",
+--   "subscription_active": "boolean",
+--   "subscription_expires_at": "ISO string|null",
+--   "password_hash": "bcrypt hash",
+--   "roblox_id": "string|null",
+--   "roblox_username": "string|null",
+--   "created_at": "ISO string",
+--   "updated_at": "ISO string"
+-- }
+
+-- subscription_tiers: JSON object keyed by tier id
+-- {
+--   "free": { "id": "free", "name": "Free", "price": 0, "features": [...], "limits": {...} },
+--   "plus": { ... },
+--   "pro": { ... }
+-- }
+
+-- user_usage: JSON array of usage records
+-- {
+--   "id": "uuid",
+--   "user_id": "uuid",
+--   "type": "ai_generation",
+--   "value": "number",
+--   "meta": "JSON string",
+--   "created_at": "ISO string"
+-- }
+
+-- workspace_sessions: JSON object keyed by "userId::workspaceName"
+-- {
+--   "id": "uuid",
+--   "user_id": "uuid",
+--   "workspace_name": "string",
+--   "status": "active|inactive",
+--   "last_synced_at": "ISO string|null",
+--   "metadata": "JSON object",
+--   "created_at": "ISO string",
+--   "updated_at": "ISO string"
+-- }
+
+-- workspace_projects: JSON object keyed by project UUID
+-- {
+--   "id": "uuid",
+--   "user_id": "uuid",
+--   "workspace_id": "uuid",
+--   "name": "string",
+--   "description": "string|null",
+--   "status": "active",
+--   "metadata": "JSON object|null",
+--   "created_at": "ISO string",
+--   "updated_at": "ISO string"
+-- }
+
+-- audit_logs: JSON array of audit records
+-- {
+--   "id": "uuid",
+--   "user_id": "uuid|null",
+--   "actor_id": "uuid|null",
+--   "action": "string",
+--   "target": "JSON object",
+--   "details": "JSON object",
+--   "created_at": "ISO string"
+-- }

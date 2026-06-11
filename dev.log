@@ -1,0 +1,11 @@
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.74:3000
+- Environments: .env
+✓ Ready in 2.5s
+○ Compiling proxy ...
+
+✓ Finished writing to filesystem cache in 28.3s
+✓ Finished writing to filesystem cache in 15.2s
+✓ Finished writing to filesystem cache in 12.6s
+^C
