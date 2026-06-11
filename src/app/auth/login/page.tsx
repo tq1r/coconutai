@@ -11,77 +11,34 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Login failed');
-        return;
-      }
-
-      // Redirect to dashboard on successful login
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Login failed'); return; }
       router.push('/dashboard');
-    } catch (err: any) {
-      setError('An unexpected error occurred');
-      console.error('Login error:', err);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { setError('Connection error'); } finally { setLoading(false); }
   };
 
   return (
-    <AuthLayout
-      title="Welcome Back"
-      subtitle="Sign in to your Coconut AI workspace"
-      footerText="Don't have an account?"
-      footerLink={{ text: 'Sign up', href: '/auth/signup' }}
-    >
-      <form onSubmit={handleLogin} className="space-y-4">
-        <AuthInput
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          error={error && !error.includes('password') ? error : ''}
-        />
-
-        <AuthInput
-          label="Password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        {error && <div className="text-error text-sm p-3 bg-error/10 rounded-lg">{error}</div>}
-
-        <AuthButton type="submit" isLoading={isLoading}>
-          Sign In
-        </AuthButton>
+    <AuthLayout title="Sign In" subtitle="Welcome back to Coconut AI" footerText="Don't have an account?" footerLink={{ text: 'Sign up', href: '/auth/signup' }}>
+      <form onSubmit={handleSubmit}>
+        <AuthInput label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <AuthInput label="Password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        {error && <p className="text-rose-400 text-xs mb-3">{error}</p>}
+        <AuthButton isLoading={loading}>Sign In</AuthButton>
+        <div className="mt-3 text-center">
+          <Link href="/auth/reset-password" className="text-xs text-sand-400 hover:text-cyan-400 no-underline">Forgot password?</Link>
+        </div>
       </form>
-
-      <div className="mt-6 text-center">
-        <Link
-          href="/auth/reset-password"
-          className="text-primary-500 hover:text-primary-400 text-sm font-medium transition-colors"
-        >
-          Forgot password?
-        </Link>
-      </div>
     </AuthLayout>
   );
 }
