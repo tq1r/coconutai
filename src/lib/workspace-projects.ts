@@ -12,15 +12,16 @@ function toProject(row: any): WorkspaceProject {
 }
 
 export async function listWorkspaceProjects(userId: string, workspaceName: string): Promise<WorkspaceProject[]> {
-  const workspace = findWorkspaceSession(userId, workspaceName);
+  const workspace = await findWorkspaceSession(userId, workspaceName);
   if (!workspace) return [];
-  return findProjectsByWorkspace(userId, workspace.id).map(toProject);
+  const rows = await findProjectsByWorkspace(userId, workspace.id);
+  return rows.map(toProject);
 }
 
 export async function createWorkspaceProject(
   userId: string, workspaceName: string, payload: { name: string; description?: string; metadata?: Record<string, any> }
 ): Promise<WorkspaceProject | null> {
-  let workspace = findWorkspaceSession(userId, workspaceName);
+  let workspace = await findWorkspaceSession(userId, workspaceName);
   if (!workspace) {
     workspace = await createOrUpdateWorkspaceSession(userId, workspaceName, { status: 'active', last_synced_at: now(), metadata: {} });
   }
@@ -28,7 +29,7 @@ export async function createWorkspaceProject(
 
   const t = now();
   const id = generateId();
-  insertProject({
+  await insertProject({
     id, user_id: userId, workspace_id: workspace.id, name: payload.name,
     description: payload.description ?? null, status: 'active',
     metadata: payload.metadata ?? null, created_at: t, updated_at: t,
@@ -38,29 +39,30 @@ export async function createWorkspaceProject(
     metadata: { active_project_id: id, active_project_name: payload.name },
   });
 
-  return toProject(findProjectById(userId, id)!);
+  const row = await findProjectById(userId, id);
+  return row ? toProject(row) : null;
 }
 
 export async function getWorkspaceProject(userId: string, projectId: string): Promise<WorkspaceProject | null> {
-  const row = findProjectById(userId, projectId);
+  const row = await findProjectById(userId, projectId);
   return row ? toProject(row) : null;
 }
 
 export async function updateWorkspaceProject(
   userId: string, projectId: string, payload: { name?: string; description?: string | null; metadata?: Record<string, any> | null }
 ): Promise<WorkspaceProject | null> {
-  updateProject(projectId, {
+  await updateProject(projectId, {
     ...(payload.name !== undefined && { name: payload.name }),
     ...(payload.description !== undefined && { description: payload.description }),
     ...(payload.metadata !== undefined && { metadata: payload.metadata }),
   });
-  const row = findProjectById(userId, projectId);
+  const row = await findProjectById(userId, projectId);
   return row ? toProject(row) : null;
 }
 
 export async function deleteWorkspaceProject(userId: string, projectId: string): Promise<boolean> {
-  const row = findProjectById(userId, projectId);
+  const row = await findProjectById(userId, projectId);
   if (!row) return false;
-  delProject(projectId);
+  await delProject(projectId);
   return true;
 }

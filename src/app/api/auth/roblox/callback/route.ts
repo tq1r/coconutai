@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { findProfileById, updateProfile } from '@/lib/db';
+import { updateProfile } from '@/lib/db';
 import { verifyToken } from '@/lib/auth-core';
 
 const ROBLOX_CLIENT_ID = process.env.ROBLOX_CLIENT_ID || '';
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const robloxUser = await userRes.json();
 
     // Save to profile
-    updateProfile(payload.userId, {
+    await updateProfile(payload.userId, {
       roblox_id: robloxUser.sub,
       roblox_username: robloxUser.preferred_username || robloxUser.nickname,
     });

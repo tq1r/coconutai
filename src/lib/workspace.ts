@@ -11,19 +11,20 @@ function toSession(row: any): WorkspaceSession {
 }
 
 export async function getWorkspaceSession(userId: string, workspaceName: string): Promise<WorkspaceSession | null> {
-  const row = findWorkspaceSession(userId, workspaceName);
+  const row = await findWorkspaceSession(userId, workspaceName);
   return row ? toSession(row) : null;
 }
 
 export async function listWorkspaceSessions(userId: string): Promise<WorkspaceSession[]> {
-  return listSessions(userId).map(toSession);
+  const rows = await listSessions(userId);
+  return rows.map(toSession);
 }
 
 export async function createOrUpdateWorkspaceSession(
   userId: string, workspaceName: string, payload: Partial<WorkspaceSession>
 ): Promise<WorkspaceSession | null> {
   const key = `${userId}::${workspaceName}`;
-  const existing = findWorkspaceSession(userId, workspaceName);
+  const existing = await findWorkspaceSession(userId, workspaceName);
   const t = now();
 
   const mergedMetadata = mergeMetadata(
@@ -32,23 +33,23 @@ export async function createOrUpdateWorkspaceSession(
   );
 
   if (existing) {
-    upsertWorkspaceSession(key, {
+    await upsertWorkspaceSession(key, {
       ...existing,
       status: payload.status ?? 'active',
       last_synced_at: payload.last_synced_at ?? t,
       metadata: mergedMetadata,
       updated_at: t,
     });
-    const updated = findWorkspaceSession(userId, workspaceName);
+    const updated = await findWorkspaceSession(userId, workspaceName);
     return updated ? toSession(updated) : null;
   }
 
-  upsertWorkspaceSession(key, {
+  await upsertWorkspaceSession(key, {
     id: generateId(), user_id: userId, workspace_name: workspaceName,
     status: payload.status ?? 'active', last_synced_at: payload.last_synced_at ?? t,
     metadata: mergedMetadata, created_at: t, updated_at: t,
   });
-  const created = findWorkspaceSession(userId, workspaceName);
+  const created = await findWorkspaceSession(userId, workspaceName);
   return created ? toSession(created) : null;
 }
 

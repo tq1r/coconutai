@@ -6,7 +6,7 @@ export async function getCurrentUser(token?: string): Promise<User | null> {
   if (!token) return null;
   const payload = await verifyToken(token);
   if (!payload) return null;
-  const row = findProfileById(payload.userId);
+  const row = await findProfileById(payload.userId);
   if (!row) return null;
   return mapRowToUser(row);
 }
@@ -16,10 +16,12 @@ export async function signUpWithEmail(
   password: string,
   userData: { username: string; display_name: string }
 ) {
-  if (findProfileByEmail(email)) {
+  const existingEmail = await findProfileByEmail(email);
+  if (existingEmail) {
     return { success: false, error: 'Email already taken' };
   }
-  if (findProfileByUsername(userData.username)) {
+  const existingUsername = await findProfileByUsername(userData.username);
+  if (existingUsername) {
     return { success: false, error: 'Username already taken' };
   }
 
@@ -27,7 +29,7 @@ export async function signUpWithEmail(
   const passwordHash = await hashPassword(password);
   const t = now();
 
-  insertProfile({
+  await insertProfile({
     id, email, username: userData.username, display_name: userData.display_name,
     avatar_url: null, role: 'user', subscription_tier: 'free', subscription_active: false,
     subscription_expires_at: null, password_hash: passwordHash,
@@ -44,7 +46,7 @@ export async function signUpWithEmail(
 }
 
 export async function signInWithEmail(email: string, password: string) {
-  const row = findProfileByEmail(email);
+  const row = await findProfileByEmail(email);
   if (!row) return { success: false, error: 'Invalid email or password' };
 
   const valid = await verifyPassword(password, row.password_hash);
@@ -63,12 +65,12 @@ export async function signOut() {
 }
 
 export async function updateUserSubscription(userId: string, tier: 'free' | 'plus' | 'pro', active: boolean, expiresAt?: string) {
-  updateProfile(userId, { subscription_tier: tier, subscription_active: active, subscription_expires_at: expiresAt || null });
+  await updateProfile(userId, { subscription_tier: tier, subscription_active: active, subscription_expires_at: expiresAt || null });
   return { success: true };
 }
 
 export async function updateUserRole(userId: string, role: 'user' | 'premium' | 'admin') {
-  updateProfile(userId, { role });
+  await updateProfile(userId, { role });
   return { success: true };
 }
 

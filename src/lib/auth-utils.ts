@@ -33,7 +33,7 @@ export function withAuth(
         return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
       }
 
-      const profile = findProfileById(payload.userId);
+      const profile = await findProfileById(payload.userId);
       if (!profile) {
         return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
       }
@@ -54,7 +54,7 @@ export function withAuth(
 
 export async function isAdmin(userId: string): Promise<boolean> {
   try {
-    const profile = findProfileById(userId);
+    const profile = await findProfileById(userId);
     return profile?.role === 'admin';
   } catch {
     return false;
@@ -63,7 +63,7 @@ export async function isAdmin(userId: string): Promise<boolean> {
 
 export async function hasPremium(userId: string): Promise<boolean> {
   try {
-    const profile = findProfileById(userId);
+    const profile = await findProfileById(userId);
     if (!profile?.subscription_active) return false;
     if (profile.subscription_expires_at) {
       return new Date(profile.subscription_expires_at) > new Date();

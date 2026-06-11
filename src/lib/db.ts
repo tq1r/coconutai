@@ -1,63 +1,19 @@
-import fs from 'fs';
-import path from 'path';
+import { Redis } from '@upstash/redis';
 import { randomUUID } from 'crypto';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'coconut.json');
-
-interface Database {
-  profiles: Record<string, any>;
-  subscription_tiers: Record<string, any>;
-  user_usage: any[];
-  workspace_sessions: Record<string, any>;
-  workspace_projects: Record<string, any>;
-  audit_logs: any[];
-}
-
-const DEFAULT_DB: Database = {
-  profiles: {},
-  subscription_tiers: {
-    free: { id: 'free', name: 'Free', price: 0, features: ['Basic AI models', '10 generations/month', 'Community support'], limits: { generations_per_month: 10, max_context_length: 4096 } },
-    plus: { id: 'plus', name: 'Plus', price: 9, features: ['Premium models', '100 generations/month', 'Priority support', 'Real-time sync'], limits: { generations_per_month: 100, max_context_length: 8192 } },
-    pro: { id: 'pro', name: 'Pro', price: 49, features: ['All models', 'Unlimited generations', 'Email support', 'Advanced tools'], limits: { generations_per_month: -1, max_context_length: 16000 } },
-  },
-  user_usage: [],
-  workspace_sessions: {},
-  workspace_projects: {},
-  audit_logs: [],
-};
-
-let cache: Database | null = null;
-
-function ensureDir() {
-  const dir = path.dirname(DB_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+function createRedisClient(): Redis | null {
+  const url = process.env.KV_REST_API_URL || process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (url && token) {
+    return new Redis({ url, token });
   }
+  return null;
 }
 
-export function getDb(): Database {
-  if (cache) return cache;
+const redis = createRedisClient();
 
-  ensureDir();
-
-  if (fs.existsSync(DB_PATH)) {
-    try {
-      const raw = fs.readFileSync(DB_PATH, 'utf-8');
-      cache = JSON.parse(raw);
-      return cache!;
-    } catch {
-      console.warn('DB file corrupted, resetting');
-    }
-  }
-
-  cache = JSON.parse(JSON.stringify(DEFAULT_DB));
-  persist();
-  return cache!;
-}
-
-function persist() {
-  ensureDir();
-  fs.writeFileSync(DB_PATH, JSON.stringify(cache, null, 2), 'utf-8');
+export function isRedisAvailable(): boolean {
+  return redis !== null;
 }
 
 export function generateId(): string {
@@ -68,98 +24,137 @@ export function now(): string {
   return new Date().toISOString();
 }
 
+async function ensureRedis(): Promise<Redis> {
+  if (!redis) throw new Error('Redis not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN env vars.');
+  return redis;
+}
+
 // Profile helpers
-export function findProfileByEmail(email: string) {
-  const db = getDb();
-  return Object.values(db.profiles).find((p: any) => p.email === email) || null;
+export async function findProfileByEmail(email: string) {
+  const r = await ensureRedis();
+  const id = await r.get(`email:${email.toLowerCase()}`);
+  if (!id) return null;
+  const raw = await r.get(`profile:${id}`);
+  return raw ? JSON.parse(raw as string) : null;
 }
 
-export function findProfileByUsername(username: string) {
-  const db = getDb();
-  return Object.values(db.profiles).find((p: any) => p.username === username) || null;
+export async function findProfileByUsername(username: string) {
+  const r = await ensureRedis();
+  const id = await r.get(`username:${username.toLowerCase()}`);
+  if (!id) return null;
+  const raw = await r.get(`profile:${id}`);
+  return raw ? JSON.parse(raw as string) : null;
 }
 
-export function findProfileById(id: string) {
-  const db = getDb();
-  return db.profiles[id] || null;
+export async function findProfileById(id: string) {
+  const r = await ensureRedis();
+  const raw = await r.get(`profile:${id}`);
+  return raw ? JSON.parse(raw as string) : null;
 }
 
-export function insertProfile(profile: any) {
-  const db = getDb();
-  db.profiles[profile.id] = profile;
-  persist();
+export async function insertProfile(profile: any) {
+  const r = await ensureRedis();
+  await Promise.all([
+    r.set(`profile:${profile.id}`, JSON.stringify(profile)),
+    r.set(`email:${profile.email.toLowerCase()}`, profile.id),
+    r.set(`username:${profile.username.toLowerCase()}`, profile.id),
+  ]);
 }
 
-export function updateProfile(id: string, updates: Record<string, any>) {
-  const db = getDb();
-  if (!db.profiles[id]) return;
-  db.profiles[id] = { ...db.profiles[id], ...updates, updated_at: now() };
-  persist();
+export async function updateProfile(id: string, updates: Record<string, any>) {
+  const r = await ensureRedis();
+  const raw = await r.get(`profile:${id}`);
+  if (!raw) return;
+  const profile = JSON.parse(raw as string);
+  const updated = { ...profile, ...updates, updated_at: now() };
+  await r.set(`profile:${id}`, JSON.stringify(updated));
 }
 
 // Workspace helpers
-export function findWorkspaceSession(userId: string, workspaceName: string) {
-  const db = getDb();
-  const key = `${userId}::${workspaceName}`;
-  return db.workspace_sessions[key] || null;
+export async function findWorkspaceSession(userId: string, workspaceName: string) {
+  const r = await ensureRedis();
+  const raw = await r.get(`session:${userId}:${workspaceName}`);
+  return raw ? JSON.parse(raw as string) : null;
 }
 
-export function listWorkspaceSessions(userId: string) {
-  const db = getDb();
-  return Object.values(db.workspace_sessions)
-    .filter((s: any) => s.user_id === userId)
+export async function listWorkspaceSessions(userId: string) {
+  const r = await ensureRedis();
+  const keys = await r.keys(`session:${userId}:*`);
+  if (!keys.length) return [];
+  const values = await r.mget(...keys);
+  return (values as string[])
+    .filter(Boolean)
+    .map((v) => JSON.parse(v))
     .sort((a: any, b: any) => b.updated_at.localeCompare(a.updated_at));
 }
 
-export function upsertWorkspaceSession(key: string, session: any) {
-  const db = getDb();
-  db.workspace_sessions[key] = session;
-  persist();
+export async function upsertWorkspaceSession(key: string, session: any) {
+  const r = await ensureRedis();
+  await r.set(`session:${key}`, JSON.stringify(session));
 }
 
 // Project helpers
-export function findProjectsByWorkspace(userId: string, workspaceId: string) {
-  const db = getDb();
-  return Object.values(db.workspace_projects)
-    .filter((p: any) => p.user_id === userId && p.workspace_id === workspaceId)
+export async function findProjectsByWorkspace(userId: string, workspaceId: string) {
+  const r = await ensureRedis();
+  const idsRaw = await r.get(`project_ids:${userId}:${workspaceId}`);
+  const ids: string[] = idsRaw ? JSON.parse(idsRaw as string) : [];
+  if (!ids.length) return [];
+  const values = await r.mget(...ids.map((id) => `project:${id}`));
+  return (values as string[])
+    .filter(Boolean)
+    .map((v) => JSON.parse(v))
     .sort((a: any, b: any) => b.updated_at.localeCompare(a.updated_at));
 }
 
-export function findProjectById(userId: string, projectId: string) {
-  const db = getDb();
-  const p = db.workspace_projects[projectId];
+export async function findProjectById(userId: string, projectId: string) {
+  const r = await ensureRedis();
+  const raw = await r.get(`project:${projectId}`);
+  if (!raw) return null;
+  const p = JSON.parse(raw as string);
   return p && p.user_id === userId ? p : null;
 }
 
-export function insertProject(project: any) {
-  const db = getDb();
-  db.workspace_projects[project.id] = project;
-  persist();
+export async function insertProject(project: any) {
+  const r = await ensureRedis();
+  await r.set(`project:${project.id}`, JSON.stringify(project));
+  const idsKey = `project_ids:${project.user_id}:${project.workspace_id}`;
+  const idsRaw = await r.get(idsKey);
+  const ids: string[] = idsRaw ? JSON.parse(idsRaw as string) : [];
+  ids.push(project.id);
+  await r.set(idsKey, JSON.stringify(ids));
 }
 
-export function updateProject(id: string, updates: Record<string, any>) {
-  const db = getDb();
-  if (!db.workspace_projects[id]) return;
-  db.workspace_projects[id] = { ...db.workspace_projects[id], ...updates, updated_at: now() };
-  persist();
+export async function updateProject(id: string, updates: Record<string, any>) {
+  const r = await ensureRedis();
+  const raw = await r.get(`project:${id}`);
+  if (!raw) return;
+  const project = JSON.parse(raw as string);
+  const updated = { ...project, ...updates, updated_at: now() };
+  await r.set(`project:${id}`, JSON.stringify(updated));
 }
 
-export function deleteProject(id: string) {
-  const db = getDb();
-  delete db.workspace_projects[id];
-  persist();
+export async function deleteProject(id: string) {
+  const r = await ensureRedis();
+  const raw = await r.get(`project:${id}`);
+  if (!raw) return;
+  const project = JSON.parse(raw as string);
+  await r.del(`project:${id}`);
+  const idsKey = `project_ids:${project.user_id}:${project.workspace_id}`;
+  const idsRaw = await r.get(idsKey);
+  if (idsRaw) {
+    const ids: string[] = JSON.parse(idsRaw as string);
+    await r.set(idsKey, JSON.stringify(ids.filter((pid) => pid !== id)));
+  }
 }
 
 // Usage helpers
-export function insertUsage(record: any) {
-  const db = getDb();
-  db.user_usage.push(record);
-  persist();
+export async function insertUsage(record: any) {
+  const r = await ensureRedis();
+  await r.set(`usage:${record.id || generateId()}`, JSON.stringify(record));
 }
 
 // Audit helpers
-export function insertAuditLog(log: any) {
-  const db = getDb();
-  db.audit_logs.push(log);
-  persist();
+export async function insertAuditLog(log: any) {
+  const r = await ensureRedis();
+  await r.set(`audit:${log.id || generateId()}`, JSON.stringify(log));
 }
