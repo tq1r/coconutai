@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import EditorPanel from '@/components/EditorPanel';
-import ThemePicker from '@/components/ThemePicker';
+import Sidebar from '@/components/Sidebar';
+import SettingsPanel from '@/components/SettingsPanel';
 import type { AIModel, AIResponse, WorkspaceProject, WorkspaceSession, ScriptFile } from '@/types';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string }
@@ -22,8 +23,11 @@ end
 return module
 `;
 
+type TabId = 'explorer' | 'chat' | 'settings';
+
 export default function DashboardPage() {
   const [userName, setUserName] = useState('Creator');
+  const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [models, setModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState('gpt-4o');
@@ -38,13 +42,11 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [files, setFiles] = useState<ScriptFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
-  const [showExplorer, setShowExplorer] = useState(true);
-  const [showChat, setShowChat] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabId>('chat');
   const [showNewFileInput, setShowNewFileInput] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [robloxLinked, setRobloxLinked] = useState(false);
   const [robloxUsername, setRobloxUsername] = useState('');
-  const [robloxStatus, setRobloxStatus] = useState('');
   const [pluginCode, setPluginCode] = useState('');
   const [pluginStatus, setPluginStatus] = useState('');
   const pluginCodeRef = useRef(pluginCode);
@@ -59,15 +61,11 @@ export default function DashboardPage() {
     if (saved) setPluginCode(saved);
     const params = new URLSearchParams(window.location.search);
     const rbx = params.get('roblox');
-    if (rbx === 'linked') { setRobloxStatus('✅ Roblox linked!'); fetchCurrentUser(); }
-    else if (rbx === 'error') setRobloxStatus('❌ Link failed.');
-    else if (rbx === 'token_error') setRobloxStatus('❌ Token exchange failed.');
-    else if (rbx === 'userinfo_error') setRobloxStatus('❌ Could not fetch Roblox profile.');
-    if (rbx) setTimeout(() => setRobloxStatus(''), 5000);
+    if (rbx === 'linked') fetchCurrentUser();
   }, []);
 
+  // Keep chat scrolled to bottom
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
-
   useEffect(() => { pluginCodeRef.current = pluginCode; }, [pluginCode]);
 
   function setPluginCodeAndPersist(code: string) {
@@ -82,6 +80,7 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data?.success && data.user) {
         setUserName(data.user.display_name ?? data.user.email ?? 'Creator');
+        setUserEmail(data.user.email || '');
         setUserRole(data.user.role || null);
         setRobloxLinked(!!data.user.roblox_id);
         setRobloxUsername(data.user.roblox_username || '');
@@ -207,7 +206,7 @@ export default function DashboardPage() {
     <ErrorBoundary>
       <div className="h-screen flex flex-col" style={{ background: 'var(--bg-gradient)' }}>
         {/* ── Navbar ─────────────────────────────────────── */}
-        <header className="flex items-center gap-3 px-5 h-12" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', backdropFilter: 'blur(8px)' }}>
+        <header className="flex items-center gap-3 px-5 h-12 flex-shrink-0" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)', backdropFilter: 'blur(8px)' }}>
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="text-xl">🥥</span>
             <span className="font-bold text-sm" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
@@ -231,7 +230,7 @@ export default function DashboardPage() {
                 maxLength={6}
                 style={{ color: 'var(--text-primary)' }}
               />
-              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0`} style={{ background: pluginCode.trim().length === 6 ? 'var(--accent)' : 'var(--border-strong)' }} />
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: pluginCode.trim().length === 6 ? 'var(--accent)' : 'var(--border-strong)' }} />
               {pluginCode.trim().length === 6 && (
                 <span className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>Synced</span>
               )}
@@ -242,7 +241,7 @@ export default function DashboardPage() {
 
             {/* Roblox link */}
             <a href="/api/auth/roblox" className="px-2.5 py-1.5 rounded-lg font-medium border no-underline" style={{ background: robloxLinked ? 'var(--accent-soft)' : 'var(--bg-surface)', color: robloxLinked ? 'var(--accent)' : 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
-              {robloxLinked ? `🔗 ${robloxUsername}` : 'Link Roblox'}
+              {robloxLinked ? `🎮 ${robloxUsername}` : 'Link Roblox'}
             </a>
 
             <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: syncStatus === 'Connected' ? 'var(--accent)' : 'var(--text-muted)' }} />
@@ -253,133 +252,149 @@ export default function DashboardPage() {
             {userRole === 'premium' && <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#92400e' }}>✦ PREMIUM</span>}
             {userRole === 'admin' && <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fca5a5, #ef4444)', color: '#7f1d1d' }}>✦ ADMIN</span>}
 
-            <ThemePicker />
             <span className="px-2.5 py-1.5 rounded-lg border font-medium truncate max-w-[100px] text-xs" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>{userName}</span>
           </div>
         </header>
 
-        {/* ── IDE Body ───────────────────────────────────── */}
-        <div className="flex flex-1 overflow-hidden gap-2.5 p-2.5 min-h-0">
-          {/* Explorer */}
-          {showExplorer && (
-            <aside className="w-56 flex flex-col flex-shrink-0 panel overflow-hidden">
-              <div className="flex items-center justify-between px-4 h-11 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                <span className="label">Explorer</span>
-                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
-              </div>
-              {showNewFileInput && (
-                <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                  <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full input-base text-xs" style={{ padding: '8px 12px' }} autoFocus />
+        {/* ── Body ────────────────────────────────────────── */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar with Activity Bar */}
+          <div className="flex-shrink-0" style={{ borderRight: '1px solid var(--border-color)' }}>
+            <Sidebar activeTab={activeTab} onTabChange={setActiveTab}>
+              {/* Explorer Panel */}
+              {activeTab === 'explorer' && (
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between px-4 h-11 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <span className="label" style={{ fontSize: 10 }}>Explorer</span>
+                    <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
+                  </div>
+                  {showNewFileInput && (
+                    <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                      <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full text-xs outline-none" style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px' }} autoFocus />
+                    </div>
+                  )}
+                  <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+                    {projects.map((project) => (
+                      <button key={project.id} onClick={() => {
+                        setActiveProjectId(project.id);
+                        const existing = files.find((f) => f.projectId === project.id);
+                        if (existing) setActiveFileId(existing.id);
+                        else {
+                          const newFile: ScriptFile = { id: project.id, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId: project.id, updatedAt: new Date().toISOString() };
+                          setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
+                        }
+                      }} className="w-full text-left px-3 py-2 text-xs rounded-lg transition-all truncate border cursor-pointer" style={activeProjectId === project.id ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--border-color)', fontWeight: 500 } : { background: 'transparent', color: 'var(--text-secondary)', borderColor: 'transparent' }}>
+                        📄 {project.name}.lua
+                      </button>
+                    ))}
+                    {projects.length === 0 && <p className="text-xs text-center mt-8 px-2" style={{ color: 'var(--text-muted)' }}>No files<br />Click + to create</p>}
+                  </div>
                 </div>
               )}
-              <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-                {projects.map((project) => (
-                  <button key={project.id} onClick={() => {
-                    setActiveProjectId(project.id);
-                    const existing = files.find((f) => f.projectId === project.id);
-                    if (existing) setActiveFileId(existing.id);
-                    else {
-                      const newFile: ScriptFile = { id: project.id, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId: project.id, updatedAt: new Date().toISOString() };
-                      setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
-                    }
-                  }} className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-all truncate border cursor-pointer ${activeProjectId === project.id ? 'font-medium' : 'border-transparent'}`} style={activeProjectId === project.id ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--border-color)' } : { color: 'var(--text-secondary)', background: 'transparent' }}>
-                    📄 {project.name}.lua
-                  </button>
-                ))}
-                {projects.length === 0 && <p className="text-xs text-center mt-8 px-2" style={{ color: 'var(--text-muted)' }}>No files<br />Click + to create</p>}
-              </div>
-            </aside>
-          )}
 
-          {/* Editor */}
-          <main className="flex-1 flex flex-col overflow-hidden min-w-0 panel" style={{ background: 'var(--bg-editor)' }}>
-            <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
-          </main>
-
-          {/* Chat */}
-          {showChat && (
-            <aside className="w-80 flex flex-col flex-shrink-0 panel overflow-hidden">
-              <div className="flex items-center justify-between px-4 h-11 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                <span className="label">AI Assistant</span>
-                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[11px] rounded-lg px-2 py-1 outline-none max-w-[130px] truncate font-medium" style={{ background: 'var(--bg-surface)', color: 'var(--accent)', border: '1px solid var(--border-color)' }}>
-                  {models.map((m) => <option key={m.id} value={m.id}>{m.name} {m.premium ? '✦' : '⊙'}</option>)}
-                </select>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                {chatHistory.length === 0 ? (
-                  <div className="text-center mt-14 px-4">
-                    <p className="text-3xl mb-3">🏝️</p>
-                    <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate Roblox code</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, economy, or anything</p>
+              {/* Chat Panel */}
+              {activeTab === 'chat' && (
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between px-4 h-11 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <span className="label" style={{ fontSize: 10 }}>AI Assistant</span>
+                    <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[11px] rounded-lg px-2 py-1 outline-none max-w-[130px] truncate font-medium" style={{ background: 'var(--bg-surface)', color: 'var(--accent)', border: '1px solid var(--border-color)' }}>
+                      {models.map((m) => <option key={m.id} value={m.id}>{m.name} {m.premium ? '✦' : '⊙'}</option>)}
+                    </select>
                   </div>
-                ) : chatHistory.map((msg, i) => (
-                  <div key={i}>
-                    {/* User message */}
-                    {msg.role === 'user' && (
-                      <div className="flex items-start gap-2">
-                        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
-                        <div>
-                          <p className="text-[10px] font-semibold mb-0.5" style={{ color: 'var(--text-muted)' }}>You</p>
-                          <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{msg.text}</p>
-                        </div>
+
+                  <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                    {chatHistory.length === 0 ? (
+                      <div className="text-center mt-14 px-4">
+                        <p className="text-3xl mb-3">🏝️</p>
+                        <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate Roblox code</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, economy, or anything</p>
                       </div>
-                    )}
-                    {/* Assistant message */}
-                    {msg.role === 'assistant' && (
-                      <div className="rounded-xl p-3 border" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }}>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <span>🤖</span>
-                          <span className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Coconut AI</span>
-                        </div>
-                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>{msg.text}</pre>
-                        {(msg.text.includes('function') || msg.text.includes('local ')) && (
-                          <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-xs text-white px-3 py-1.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all border-0 cursor-pointer" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
-                            Apply to Editor
-                          </button>
+                    ) : chatHistory.map((msg, i) => (
+                      <div key={i}>
+                        {msg.role === 'user' && (
+                          <div className="flex items-start gap-2">
+                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
+                            <div>
+                              <p className="text-[10px] font-semibold mb-0.5" style={{ color: 'var(--text-muted)' }}>You</p>
+                              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{msg.text}</p>
+                            </div>
+                          </div>
+                        )}
+                        {msg.role === 'assistant' && (
+                          <div className="rounded-xl p-3 border" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }}>
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <span>🤖</span>
+                              <span className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Coconut AI</span>
+                            </div>
+                            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>{msg.text}</pre>
+                            {(msg.text.includes('function') || msg.text.includes('local ')) && (
+                              <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-xs text-white px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all border-0 cursor-pointer" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
+                                Apply to Editor
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
+                    ))}
+                    <div ref={chatEndRef} />
                   </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
 
-              {/* Input */}
-              <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-elevated)' }}>
-                {error && <p className="text-xs mb-2 font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
-                <textarea
-                  rows={2}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
-                  placeholder="Describe what to build..."
-                  className="w-full resize-none text-sm rounded-xl px-3.5 py-2.5 input-base"
-                  style={{ fontSize: 13, lineHeight: 1.5 }}
+                  <div className="px-3 py-3 border-t flex-shrink-0" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-elevated)' }}>
+                    {error && <p className="text-xs mb-2 font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+                    <textarea
+                      rows={2}
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
+                      placeholder="Describe what to build..."
+                      className="w-full resize-none text-sm rounded-xl px-3.5 py-2.5"
+                      style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: 13, lineHeight: 1.5, outline: 'none' }}
+                    />
+                    <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-xs font-semibold text-white mt-2 rounded-lg px-4 py-2.5 border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', opacity: isGenerating ? 0.6 : 1 }}>
+                      {isGenerating ? 'Generating...' : 'Generate'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Settings Panel */}
+              {activeTab === 'settings' && (
+                <SettingsPanel
+                  userName={userName}
+                  userEmail={userEmail}
+                  userRole={userRole || 'user'}
+                  robloxUsername={robloxUsername}
+                  pluginCode={pluginCode}
+                  onPluginCodeChange={setPluginCodeAndPersist}
                 />
-                <button onClick={handleGenerate} disabled={isGenerating} className="btn-primary mt-2 w-full text-xs" style={{ padding: '9px 0' }}>
-                  {isGenerating ? 'Generating...' : 'Generate'}
-                </button>
-              </div>
-            </aside>
-          )}
+              )}
+            </Sidebar>
+          </div>
+
+          {/* Editor */}
+          <main className="flex-1 flex flex-col overflow-hidden" style={{ padding: '10px' }}>
+            <div className="flex-1 flex flex-col overflow-hidden rounded-xl border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)' }}>
+              <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
+            </div>
+          </main>
         </div>
 
         {/* ── Status Bar ─────────────────────────────────── */}
-        <footer className="flex items-center justify-between px-5 h-7 border-t text-[10px]" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+        <footer className="flex items-center justify-between px-5 h-7 border-t text-[10px] flex-shrink-0" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
           <div className="flex items-center gap-4">
-            <button onClick={() => setShowExplorer(!showExplorer)} className="px-2 py-0.5 rounded-lg transition-all cursor-pointer border-0 text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent' }}>{showExplorer ? '📁 Hide Explorer' : '📁 Show Explorer'}</button>
-            <span>Ln 1</span>
-            <span className="hidden sm:inline" style={{ color: 'var(--border-strong)' }}>|</span>
-            <span className="hidden sm:inline">Luau</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('explorer')}>📁 Explorer</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('chat')}>🤖 AI Chat</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('settings')}>⚙️ Settings</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline">✦ Premium  ⊙ Free</span>
-            <button onClick={() => setShowChat(!showChat)} className="px-2 py-0.5 rounded-lg transition-all cursor-pointer border-0 text-[10px]" style={{ color: 'var(--text-muted)', background: 'transparent' }}>{showChat ? '🤖 Hide Chat' : '🤖 Show Chat'}</button>
+            <span>Ln 1</span>
+            <span style={{ color: 'var(--border-strong)' }}>|</span>
+            <span>Luau</span>
           </div>
         </footer>
       </div>
     </ErrorBoundary>
   );
 }
+
+
