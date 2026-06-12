@@ -19,51 +19,7 @@ function getProvider(): 'github' | 'openrouter' | null {
   return null;
 }
 
-function detectIntent(prompt: string): 'chat' | 'code' {
-  const p = prompt.toLowerCase().trim();
-  const greetings = ['hi', 'hello', 'hey', 'sup', 'yo', 'wsp', 'whats up', 'how are you', 'good morning', 'good evening', 'howdy', 'whats good', 'wassup'];
-  if (greetings.some(g => p === g || p.startsWith(g + ' ') || p.startsWith(g + '?'))) return 'chat';
-  if (p.includes('who are you') || p.includes('what are you') || p.includes('what can you') || p === 'who are you?' || p === 'who r u') return 'chat';
-  if (p.includes('thanks') || p.includes('thank you') || p.includes('ty') || p.includes('appreciate')) return 'chat';
-  if (/^(ok|okay|kk|alright|sure|yes|no|yeah|nah|nope|yep)\s*$/.test(p)) return 'chat';
-  if (/^(yo|lol|lmao|lmfao|nice|cool|awesome|sick|dope|bet|facts)\s*$/.test(p)) return 'chat';
-  if (p.length < 15) return 'chat';
-  return 'code';
-}
-
-function chatResponse(prompt: string): string {
-  const p = prompt.toLowerCase().trim();
-  const greetings = ['hi', 'hello', 'hey', 'sup', 'yo', 'wsp', 'whats up', 'how are you', 'good morning', 'good evening'];
-  if (greetings.some(g => p === g || p.startsWith(g + ' ') || p.startsWith(g + '?'))) {
-    return [
-      "Hey! What are we building today? Combat, UI, animations, a building system, NPCs, vehicles — name it.",
-      "Yo! Ready to build something sick. Tell me what you want — scripts, UI, animations, game systems, anything.",
-      "Hey! I build Roblox games full-stack. Combat, UI, animations, building mechanics, NPCs, VFX — your call.",
-    ][Math.floor(Math.random() * 3)];
-  }
-  if (p.includes('who are you') || p.includes('what are you') || p.includes('what can you')) {
-    return "I'm Coconut AI — a Roblox dev who ships. I build:\n\n- Combat (damage, hitboxes, projectiles, weapons)\n- UI/UX (menus, HUDs, shop interfaces, settings screens)\n- Animations (tweens, keyframes, IK, motor6D rigging)\n- Building systems (grid placement, parts, terrain editing)\n- NPCs (pathfinding, behavior trees, dialogue)\n- Physics (vehicles, ragdolls, constraints)\n- VFX (beams, particles, lighting)\n- Audio (dynamic soundscapes, positional audio)\n- Economy (currencies, shops, leaderboards, XP)\n- Full game modes (tower defense, obby, tycoon, RPG, racing)\n\nTell me what you want to build. I'll generate the code or walk you through it.";
-  }
-  if (p.includes('thanks') || p.includes('thank you') || p.includes('ty')) {
-    return "No problem! Anything else you want me to build?";
-  }
-  if (/^(ok|okay|kk|alright|sure|yes|no|yeah|nah)\s*$/.test(p)) {
-    return "Alright. What are we building? Drop a prompt and I'll handle it.";
-  }
-  return "I build Roblox games — all of it. Try:\n- \"Tower defense with 5 enemy types and wave system\"\n- \"Racing game with vehicle physics and drift\"\n- \"Building system with grid placement and snapping\"\n- \"NPC with patrol, chase, and dialogue\"\n- \"Full obby with checkpoints, leaderboard, timer\"";
-}
-
-const CODE_SYSTEM_PROMPT = `You are a world-class Roblox developer who has built and shipped top-earning games. You are a master of every domain: combat, UI, animations, building systems, NPCs, physics, audio, VFX, monetization, data persistence, vehicle physics, procedural generation, and more. You do not produce "AI slop" — every line of code you write is production-quality, optimized, and follows Roblox best practices.
-
-Rules:
-- Use game:GetService("ServiceName") pattern
-- Use lowercase 2-space indentation
-- Prefer Enum values over raw numbers
-- Modules use the local Module = {}; return Module pattern
-- Return ONLY raw Luau code. No markdown, no backticks, no explanation.
-- The code must work when pasted directly into Roblox Studio.`;
-
-const CHAT_SYSTEM_PROMPT = `You are a world-class Roblox developer who shipped top-earning games and you are also a great teammate. You master EVERY field: combat systems, UI/UX design, animations & tweens, building & construction mechanics, NPC behavior & pathfinding, physics simulations, audio systems, VFX & lighting, monetization & economy, data persistence, vehicle physics, procedural generation, and game architecture. When the user chats casually, respond naturally and conversationally — like an experienced dev giving advice to a teammate. You can explain concepts, suggest approaches, discuss tradeoffs, and help them think through their game design. When they ask for help, give real, actionable advice based on your experience.`;
+const SYSTEM_PROMPT = `You are Coconut AI, a world-class AI assistant who knows everything. You are a master of every domain: software engineering, game development, math, science, history, literature, art, music, pop culture, and general knowledge. You respond naturally and conversationally — like a brilliant friend who happens to know everything. You can answer any question: casual chat, weather, advice, coding, writing, analysis, you name it. When the user asks for code, write clean production-quality code. When they ask about the weather or random topics, answer helpfully. Be warm, direct, and never robotic.`;
 
 const GITHUB_FALLBACK_MODEL = 'gpt-4o-mini';
 
@@ -80,15 +36,6 @@ async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
   const provider = getProvider();
   if (!provider) {
     throw new Error('No API key configured. Set GITHUB_TOKEN (free, from github.com) or OPENROUTER_API_KEY in Vercel env vars.');
-  }
-
-  const intent = detectIntent(prompt);
-  if (intent === 'chat') {
-    return {
-      model: model.name, provider,
-      output: chatResponse(prompt),
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    };
   }
 
   const endpoint = provider === 'github' ? GITHUB_ENDPOINT : OPENROUTER_ENDPOINT;
@@ -113,10 +60,10 @@ async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
       {
         model: modelId,
         messages: [
-          { role: 'system', content: intent === 'code' ? CODE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT },
+          { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: prompt },
         ],
-        temperature: intent === 'code' ? 0.2 : 0.5,
+        temperature: 0.5,
         max_tokens: 2000,
       },
       { headers }
@@ -138,10 +85,10 @@ async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
         {
           model: GITHUB_FALLBACK_MODEL,
           messages: [
-            { role: 'system', content: intent === 'code' ? CODE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT },
+            { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: prompt },
           ],
-          temperature: intent === 'code' ? 0.2 : 0.5,
+          temperature: 0.5,
           max_tokens: 2000,
         },
         { headers }
@@ -160,16 +107,6 @@ async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
 }
 
 async function requestLocal(prompt: string, model: AIModel): Promise<AIResponse> {
-  const p = prompt.toLowerCase().trim();
-
-  if (detectIntent(p) === 'chat') {
-    return {
-      model: model.name, provider: 'local',
-      output: chatResponse(prompt),
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    };
-  }
-
   if (hasAnyKey()) {
     try {
       return await requestAI(prompt, model);
