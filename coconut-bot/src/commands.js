@@ -3,12 +3,13 @@ const axios = require("axios");
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 const API_URL = process.env.COCONUT_API_URL || "https://coconutai.vercel.app";
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
 
 const isAdmin = (userId) => userId === ADMIN_DISCORD_ID;
 
 async function adminApiCall(endpoint, method = "GET", body) {
   try {
-    const config = { method, url: `${API_URL}/api/admin/${endpoint}`, headers: { "Content-Type": "application/json" } };
+    const config = { method, url: `${API_URL}/api/admin/${endpoint}`, headers: { "Content-Type": "application/json", "x-admin-key": ADMIN_API_KEY } };
     if (body) config.data = body;
     const res = await axios(config);
     return res.data;

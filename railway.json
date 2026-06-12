@@ -1,9 +1,0 @@
-{
-  "build": {
-    "builder": "nixpacks",
-    "watchPatterns": ["coconut-bot/**"]
-  },
-  "deploy": {
-    "startCommand": "cd coconut-bot && npm install && node src/index.js"
-  }
-}
