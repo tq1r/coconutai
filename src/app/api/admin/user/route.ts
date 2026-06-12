@@ -15,7 +15,6 @@ export const PATCH = withAuth(async (request: NextRequest, context) => {
     return NextResponse.json({ error: 'Target user is required' }, { status: 400 });
   }
 
-  // Look up user by ID, email, or username
   let user = await findProfileById(targetUserId);
   if (!user) user = await findProfileByEmail(targetUserId);
   if (!user) user = await findProfileByUsername(targetUserId);
@@ -37,11 +36,19 @@ export const PATCH = withAuth(async (request: NextRequest, context) => {
     message: `${user.username} updated successfully`,
     user: { id: user.id, username: user.username, email: user.email, role: updates.role || user.role, subscription_active: typeof subscription_active === 'boolean' ? subscription_active : user.subscription_active },
   }, { status: 200 });
-});
+}, { allowAdminKey: true });
 
 export const GET = withAuth(async (request: NextRequest, context) => {
   if (context.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  const targetUserId = request.nextUrl.searchParams.get('targetUserId');
+  if (targetUserId) {
+    let user = await findProfileById(targetUserId);
+    if (!user) user = await findProfileByEmail(targetUserId);
+    if (!user) user = await findProfileByUsername(targetUserId);
+    if (!user) return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    return NextResponse.json({ success: true, user });
   }
   return NextResponse.json({ success: true, message: 'Admin API ready' });
 });

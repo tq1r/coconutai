@@ -19,10 +19,25 @@ export function withAuth(
       subscriptionExpiresAt: string | null;
       subscriptionTier: string | null;
     }
-  ) => Promise<any>
+  ) => Promise<any>,
+  opts?: { allowAdminKey?: boolean }
 ) {
   return async (request: NextRequest) => {
     try {
+      // Admin API key bypass
+      if (opts?.allowAdminKey) {
+        const adminKey = request.headers.get('x-admin-key');
+        if (adminKey && adminKey === process.env.ADMIN_API_KEY) {
+          return handler(request, {
+            userId: 'admin-bot',
+            role: 'admin',
+            subscriptionActive: false,
+            subscriptionExpiresAt: null,
+            subscriptionTier: null,
+          });
+        }
+      }
+
       const token = await getTokenFromRequest(request);
       if (!token) {
         return NextResponse.json({ error: 'Missing or invalid authorization token' }, { status: 401 });
