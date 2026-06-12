@@ -335,18 +335,18 @@ export default function DashboardPage() {
   function renderExplorerPanel() {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-3 h-8 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
-          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Explorer</span>
+        <div className="flex items-center justify-between px-2.5 h-7 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>Explorer</span>
           {showIde && (
-            <button onClick={goToProjects} className="text-[10px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>Projects</button>
+            <button onClick={goToProjects} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>Projects</button>
           )}
         </div>
 
         {pluginCode.trim().length === 6 && (
           <div className="border-b" style={{ borderColor: 'var(--border-color)' }}>
-            <div className="flex items-center justify-between px-3 py-1.5">
-              <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
-              <button onClick={() => refreshExplorerTree()} className="text-[10px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>+</button>
+                <div className="flex items-center justify-between px-2.5 py-1">
+                  <span className="text-[9px] font-semibold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
+                  <button onClick={() => refreshExplorerTree()} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>+</button>
             </div>
             <div className="px-1 pb-1.5 max-h-[200px] overflow-y-auto">
               {explorerTree ? (
@@ -390,18 +390,18 @@ export default function DashboardPage() {
   function renderChatPanel() {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-3 h-8 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
-          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>AI Chat</span>
-          <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[10px] outline-none border px-1.5 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--accent)', borderColor: 'var(--border-color)' }}>
+        <div className="flex items-center justify-between px-2.5 h-7 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>AI Chat</span>
+          <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--accent)', borderColor: 'var(--border-color)' }}>
             {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
 
         <div className="flex-1 overflow-y-auto" style={{ padding: '8px 10px' }}>
           {chatHistory.length === 0 ? (
-            <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '240px' }}>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate code</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, and more</p>
+            <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '160px' }}>
+              <p className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate code</p>
+              <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, and more</p>
             </div>
               ) : chatHistory.map((msg, i) => (
             <div key={i} className="animate-slide-up" style={{ animationDelay: '0ms' }}>
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>You</p>
                     <div className="px-2.5 py-1.5 inline-block" style={{ background: 'var(--accent-soft)', borderRadius: '4px', maxWidth: '88%' }}>
-                      <p className="text-xs" style={{ lineHeight: 1.4 }}>{msg.text}</p>
+                      <p className="text-[11px]" style={{ lineHeight: 1.35 }}>{msg.text}</p>
                     </div>
                   </div>
                 </div>
@@ -422,7 +422,7 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
                     <div className="px-2.5 py-1.5" style={{ border: '1px solid var(--border-color)', borderRadius: '4px' }}>
-                      <pre className="whitespace-pre-wrap font-sans text-xs" style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}>{msg.text}</pre>
+                      <pre className="whitespace-pre-wrap font-sans text-[11px]" style={{ color: 'var(--text-primary)', lineHeight: 1.45 }}>{msg.text}</pre>
                       {(msg.text.includes('function') || msg.text.includes('local ')) && (
                         <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-[10px] text-white font-medium px-2.5 py-1 rounded border-0 cursor-pointer" style={{ background: 'var(--accent)' }}>
                           Apply
@@ -437,18 +437,18 @@ export default function DashboardPage() {
           <div ref={chatEndRef} />
         </div>
 
-        <div className="px-3 py-2 border-t flex-shrink-0" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-surface-solid)' }}>
-          {error && <p className="text-xs mb-1" style={{ color: '#ef4444' }}>{error}</p>}
+        <div className="px-3 py-1.5 border-t flex-shrink-0" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-surface-solid)' }}>
+          {error && <p className="text-[10px] mb-1" style={{ color: '#ef4444' }}>{error}</p>}
           <textarea
             rows={2}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
             placeholder="Describe what to build..."
-            className="w-full resize-none text-xs px-3 py-2"
-            style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', lineHeight: 1.4, outline: 'none' }}
+            className="w-full resize-none text-[11px] px-2.5 py-1.5"
+            style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', lineHeight: 1.35, outline: 'none' }}
           />
-          <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-xs font-medium text-white mt-2 px-4 py-2 border-0 cursor-pointer" style={{ background: 'var(--accent)', borderRadius: '4px', opacity: isGenerating ? 0.6 : 1 }}>
+          <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-[11px] font-medium text-white mt-1.5 px-3 py-1.5 border-0 cursor-pointer" style={{ background: 'var(--accent)', borderRadius: '4px', opacity: isGenerating ? 0.6 : 1 }}>
             {isGenerating ? 'Generating...' : 'Generate'}
           </button>
         </div>
@@ -465,7 +465,7 @@ export default function DashboardPage() {
           <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
           {/* Left Panel — Explorer or Settings */}
-          <div className="flex flex-col flex-shrink-0 overflow-hidden border-r animate-fade-in" style={{ width: '320px', borderColor: 'var(--border-color)' }}>
+          <div className="flex flex-col flex-shrink-0 overflow-hidden border-r animate-fade-in" style={{ width: '280px', borderColor: 'var(--border-color)' }}>
             {activeTab === 'settings' ? (
               <SettingsPanel
                 userName={userName}
@@ -482,18 +482,18 @@ export default function DashboardPage() {
           {/* Main Area */}
           <main className="flex-1 flex flex-col overflow-hidden">
             {/* Thin context bar */}
-            <div className="flex items-center gap-3 px-3 h-8 flex-shrink-0 border-b text-xs animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
+            <div className="flex items-center gap-2 px-2.5 h-7 flex-shrink-0 border-b animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
               {showIde ? (
                 <>
-                  <button onClick={goToProjects} className="border-0 cursor-pointer font-medium px-2 py-0.5 rounded" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
-                  <span style={{ color: 'var(--border-strong)' }}>/</span>
-                  <span className="font-medium truncate" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
+                  <button onClick={goToProjects} className="border-0 cursor-pointer font-medium px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
+                  <span className="text-[10px]" style={{ color: 'var(--border-strong)' }}>/</span>
+                  <span className="font-medium truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
                   <div className="flex-1" />
-                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[10px] outline-none border px-1.5 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '140px' }}>
+                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '120px' }}>
                     {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
                   </select>
                   {pluginCode.trim().length === 6 && (
-                    <span className="flex items-center gap-1.5" style={{ color: pluginConnected ? 'var(--accent)' : '#fbbf24' }}>
+                    <span className="flex items-center gap-1 text-[10px]" style={{ color: pluginConnected ? 'var(--accent)' : '#fbbf24' }}>
                       <span className={`w-1.5 h-1.5 rounded-full ${pluginConnected ? 'animate-breathe' : ''}`} style={{ background: pluginConnected ? 'var(--accent)' : '#fbbf24' }} />
                       Studio
                     </span>
@@ -501,9 +501,9 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <>
-                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Coconut AI</span>
+                  <span className="text-[11px]" style={{ color: 'var(--accent)', fontWeight: 600 }}>Coconut AI</span>
                   <div className="flex-1" />
-                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[10px] outline-none border px-1.5 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '140px' }}>
+                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '120px' }}>
                     {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
                   </select>
                 </>
@@ -512,36 +512,36 @@ export default function DashboardPage() {
 
             {!showIde ? (
               /* ── Welcome Page ─────────────────────────── */
-              <div className="flex-1 overflow-y-auto" style={{ padding: '40px 48px' }}>
-                <div className="max-w-3xl mx-auto">
-                  <div className="flex items-center justify-between mb-8">
+              <div className="flex-1 flex items-start justify-center overflow-y-auto" style={{ padding: '32px 24px' }}>
+                <div className="w-full max-w-2xl">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Projects</h1>
-                      <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Select a project to open the workspace</p>
+                      <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Projects</h1>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Select a project to open the workspace</p>
                     </div>
                     <button
                       onClick={() => setShowNewFileInput(!showNewFileInput)}
-                      className="text-xs font-medium px-3.5 py-2 border-0 cursor-pointer"
+                      className="text-[11px] font-medium px-3 py-1.5 border-0 cursor-pointer"
                       style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}
                     >+ New</button>
                   </div>
 
                   {showNewFileInput && (
-                    <div className="mb-6 p-4 border" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
+                    <div className="mb-5 p-3 border" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
                       <input
                         value={newFileName}
                         onChange={(e) => setNewFileName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !creating && createProject(newFileName)}
                         placeholder="Project name..."
-                        className="w-full outline-none px-3 py-2 text-sm"
+                        className="w-full outline-none px-3 py-1.5 text-xs"
                         style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
                         autoFocus
                       />
-                      <div className="flex gap-2 mt-3">
-                        <button onClick={() => createProject(newFileName)} disabled={creating} className="px-4 py-2 text-xs font-medium border-0 cursor-pointer" style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px', opacity: creating ? 0.6 : 1 }}>
+                      <div className="flex gap-2 mt-2">
+                        <button onClick={() => createProject(newFileName)} disabled={creating} className="px-3 py-1.5 text-[11px] font-medium border-0 cursor-pointer" style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px', opacity: creating ? 0.6 : 1 }}>
                           {creating ? 'Creating...' : 'Create'}
                         </button>
-                        <button onClick={() => { setShowNewFileInput(false); setNewFileName(''); }} className="px-4 py-2 text-xs font-medium border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', borderRadius: '4px', background: 'transparent' }}>
+                        <button onClick={() => { setShowNewFileInput(false); setNewFileName(''); }} className="px-3 py-1.5 text-[11px] font-medium border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', borderRadius: '4px', background: 'transparent' }}>
                           Cancel
                         </button>
                       </div>
@@ -549,23 +549,23 @@ export default function DashboardPage() {
                   )}
 
                   {projects.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24">
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No projects yet. Create one to get started.</p>
+                    <div className="flex flex-col items-center justify-center" style={{ paddingTop: '80px' }}>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No projects yet. Create one to get started.</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 stagger-2">
                       {projects.map((project) => (
                         <div
                           key={project.id}
                           onClick={() => openProject(project.id)}
-                          className="border cursor-pointer animate-slide-up p-4 animate-scale-hover"
-                          style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px' }}
+                          className="border cursor-pointer animate-slide-up animate-scale-hover"
+                          style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px', padding: '14px 16px' }}
                         >
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-xs font-bold" style={{ color: 'var(--accent)' }}>L</span>
-                            <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</span>
+                          <div className="flex items-center gap-2.5 mb-1.5">
+                            <span className="text-[11px] font-bold" style={{ color: 'var(--accent)' }}>L</span>
+                            <span className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</span>
                           </div>
-                          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Updated {new Date(project.updated_at).toLocaleDateString()}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Updated {new Date(project.updated_at).toLocaleDateString()}</p>
                         </div>
                       ))}
                     </div>
@@ -574,7 +574,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               /* ── Code Editor ──────────────────────────── */
-              <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '8px 10px 8px 8px' }}>
+              <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '6px' }}>
                 <div className="flex-1 flex flex-col overflow-hidden border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
                   <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
                 </div>
@@ -583,7 +583,7 @@ export default function DashboardPage() {
           </main>
 
           {/* Right Panel — Chat */}
-          <div className="flex flex-col flex-shrink-0 overflow-hidden border-l animate-slide-in-left" style={{ width: '320px', borderColor: 'var(--border-color)' }}>
+          <div className="flex flex-col flex-shrink-0 overflow-hidden border-l animate-slide-in-left" style={{ width: '280px', borderColor: 'var(--border-color)' }}>
             {renderChatPanel()}
           </div>
         </div>
