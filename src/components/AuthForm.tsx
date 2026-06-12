@@ -8,13 +8,20 @@ export const AuthInput: React.FC<{
   error?: string; required?: boolean;
 }> = ({ label, type, placeholder, value, onChange, error, required = true }) => (
   <div className="mb-4">
-    <label className="block text-sm font-semibold text-stone-600 mb-1.5">{label}{required && <span className="text-coral-400 ml-0.5">*</span>}</label>
+    <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>{label}{required && <span className="ml-0.5" style={{ color: 'var(--accent)' }}>*</span>}</label>
     <input
       type={type} placeholder={placeholder} value={value} onChange={onChange}
-      className={`w-full px-4 py-2.5 rounded-xl text-sm bg-white/90 text-stone-700 border ${error ? 'border-coral-300' : 'border-sand-200'} focus:outline-none focus:border-ocean-400 focus:ring-2 focus:ring-ocean-100 transition-all placeholder-stone-300 shadow-sm`}
+      className="w-full px-4 py-2.5 text-sm border outline-none transition-all"
+      style={{
+        background: 'var(--bg-input)', color: 'var(--text-primary)',
+        borderColor: error ? 'var(--danger)' : 'var(--border-weak)',
+        borderRadius: '4px',
+      }}
+      onFocus={(e) => { if (!error) e.currentTarget.style.borderColor = 'var(--accent)'; }}
+      onBlur={(e) => { e.currentTarget.style.borderColor = error ? 'var(--danger)' : 'var(--border-weak)'; }}
       required={required}
     />
-    {error && <p className="text-coral-500 text-xs mt-1.5 font-medium">{error}</p>}
+    {error && <p className="text-xs mt-1.5 font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
   </div>
 );
 
@@ -23,7 +30,8 @@ export const AuthButton: React.FC<{
 }> = ({ children, isLoading, onClick, type = 'submit' }) => (
   <button
     type={type} onClick={onClick} disabled={isLoading}
-    className="w-full py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-ocean-400 to-teal-400 text-white hover:from-ocean-500 hover:to-teal-500 disabled:opacity-50 transition-all shadow-md hover:shadow-lg"
+    className="w-full py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-all border-0 cursor-pointer"
+    style={{ background: 'var(--accent)', borderRadius: '4px', opacity: isLoading ? 0.6 : 1 }}
   >
     {isLoading ? 'Loading...' : children}
   </button>

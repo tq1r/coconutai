@@ -1,12 +1,14 @@
 {
   "name": "coconut-bot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Discord bot for Coconut AI - manages premium subscriptions and user lookup",
+  "main": "src/index.js",
   "scripts": {
+    "build": "tsc",
+    "prebuild": "rimraf dist",
+    "clean": "rimraf dist",
     "dev": "node src/index.js",
-    "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   }

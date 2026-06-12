@@ -35,8 +35,10 @@ Connect your Roblox Studio to Coconut AI for AI-powered script generation.
 - Secure session-based pairing
 
 ## Files
-- `CoconutAI.lua` — Main plugin script (drag into Plugins folder)
-- `CoconutAI.rbxmx` — Model file (drag into Studio viewport)
+- `CoconutAI.lua` — Main plugin script (place in your Plugins folder)
+
+## Data Privacy
+This plugin sends your instance hierarchy (explorer tree) to the Coconut AI server when the "report explorer" command is received. No other data is transmitted without explicit action.
 
 ## Updates
 The plugin auto-updates when you reconnect. Always check [coconutai.vercel.app](https://coconutai.vercel.app) for the latest version.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import WaveBackground from '@/components/WaveBackground';
@@ -21,6 +21,8 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'error' | 'success'>('error');
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   function toast(msg: string, type: 'error' | 'success') {
     setToastMsg(msg);
@@ -38,8 +40,16 @@ export default function ProjectsPage() {
           setUserRole(data.user.role || null);
         }
       })
-      .catch(() => {});
+      .catch(() => { toast('Failed to load user', 'error'); });
     fetchWorkspaces();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   async function fetchWorkspaces() {
@@ -51,7 +61,7 @@ export default function ProjectsPage() {
       const first = payload.data?.[0]?.workspace_name ?? DEFAULT_WORKSPACE;
       setWorkspaceName(first);
       await fetchProjects(first);
-    } catch {}
+    } catch { toast('Failed to load workspaces', 'error'); }
   }
 
   async function fetchProjects(name: string) {
@@ -59,7 +69,7 @@ export default function ProjectsPage() {
       const res = await fetch(`/api/workspace/projects?workspace_name=${encodeURIComponent(name)}`);
       const payload = await res.json();
       if (payload?.success) setProjects(payload.data || []);
-    } catch {}
+    } catch { toast('Failed to load projects', 'error'); }
   }
 
   async function createProject() {
@@ -102,7 +112,7 @@ export default function ProjectsPage() {
   function Toast() {
     if (!toastMsg) return null;
     return (
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: toastType === 'error' ? '#ef4444' : '#d97706', color: '#fff', borderRadius: '4px' }}>
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: toastType === 'error' ? 'var(--danger)' : 'var(--warning)', color: '#fff', borderRadius: '4px' }}>
         {toastMsg}
       </div>
     );
@@ -127,7 +137,16 @@ export default function ProjectsPage() {
           <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             {userRole === 'premium' && <span style={{ color: '#fbbf24' }}>Premium</span>}
             {userRole === 'admin' && <span style={{ color: '#ef4444' }}>Admin</span>}
-            <span style={{ color: 'var(--text-secondary)' }}>{userName}</span>
+            <div className="relative" ref={menuRef}>
+              <button onClick={() => setShowMenu(!showMenu)} className="border-0 cursor-pointer text-[11px]" style={{ color: 'var(--text-secondary)', background: 'none' }}>{userEmail || userName}</button>
+              {showMenu && (
+                <div className="absolute right-0 top-full mt-1 border text-xs z-50" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)', borderRadius: '4px', minWidth: '120px' }}>
+                  <button onClick={() => { fetch('/api/auth/logout', { method: 'POST' }).then(() => router.push('/auth/login')); }} className="w-full text-left px-3 py-1.5 border-0 cursor-pointer hover:opacity-80" style={{ color: 'var(--text-secondary)', background: 'transparent', borderRadius: '4px' }}>
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

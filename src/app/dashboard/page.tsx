@@ -9,6 +9,9 @@ import WaveBackground from '@/components/WaveBackground';
 import SettingsPanel from '@/components/SettingsPanel';
 import type { AIModel, AIResponse, WorkspaceSession, ScriptFile } from '@/types';
 
+const STORAGE_KEY_PLUGIN_CODE = 'coconut-plugin-code';
+const STORAGE_KEY_THEME = 'coconut-theme';
+
 interface ChatMessage { role: 'user' | 'assistant'; text: string }
 
 const DEFAULT_WORKSPACE = 'Coconut AI Workspace';
@@ -58,7 +61,7 @@ function TreeView({ items, depth = 0 }: { items: TreeNode[]; depth?: number }) {
 function Toast({ message, type, onClose }: { message: string; type: 'error' | 'success'; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, [onClose]);
   return (
-    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: type === 'error' ? '#ef4444' : '#d97706', color: '#fff', borderRadius: '4px' }}>
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: type === 'error' ? 'var(--danger)' : 'var(--warning)', color: '#fff', borderRadius: '4px' }}>
       {message}
     </div>
   );
@@ -101,7 +104,7 @@ export default function DashboardPage() {
     setActiveProjectId(pid);
     setActiveFileId(pid);
     fetchCurrentUser(); fetchModels(); fetchWorkspaceList(pid);
-    const saved = localStorage.getItem('coconut-plugin-code');
+    const saved = localStorage.getItem(STORAGE_KEY_PLUGIN_CODE);
     if (saved) setPluginCodeAndPersist(saved);
   }, []);
 
@@ -117,13 +120,13 @@ export default function DashboardPage() {
     setPluginCode(upper);
     setPluginConnected(false);
     if (upper.length === 6) {
-      localStorage.setItem('coconut-plugin-code', upper);
+      localStorage.setItem(STORAGE_KEY_PLUGIN_CODE, upper);
       try {
         const res = await fetch(`/api/plugin/verify?code=${upper}`);
         const data = await res.json();
         setPluginConnected(data?.connected === true);
         fetchExplorerTree();
-      } catch { setPluginConnected(false); }
+      } catch { setPluginConnected(false); toast('Failed to verify plugin code', 'error'); }
     }
   }
 
@@ -136,7 +139,7 @@ export default function DashboardPage() {
         setUserEmail(data.user.email || '');
         setUserRole(data.user.role || null);
       }
-    } catch {}
+    } catch { toast('Failed to load user data', 'error'); }
   }
 
   async function fetchModels() {
@@ -148,7 +151,7 @@ export default function DashboardPage() {
         if (!data.models.find((m: AIModel) => m.id === selectedModel))
           setSelectedModel(data.models[0]?.id ?? 'gpt-4o');
       }
-    } catch {}
+    } catch { toast('Failed to load AI models', 'error'); }
   }
 
   async function fetchWorkspaceList(projectId: string) {
@@ -160,7 +163,7 @@ export default function DashboardPage() {
       const first = payload.data?.[0]?.workspace_name ?? DEFAULT_WORKSPACE;
       setWorkspaceName(first);
       await fetchWorkspaceSession(first, projectId);
-    } catch {}
+    } catch { toast('Failed to load workspace list', 'error'); }
   }
 
   async function fetchWorkspaceSession(name: string, projectId: string) {
@@ -181,7 +184,7 @@ export default function DashboardPage() {
         setWorkspaceName(name);
         await loadProject(name, projectId);
       }
-    } catch {}
+    } catch { toast('Failed to load workspace session', 'error'); }
   }
 
   async function loadProject(name: string, projectId: string) {
@@ -201,7 +204,7 @@ export default function DashboardPage() {
       const res = await fetch(`/api/plugin/explorer?code=${code}`);
       const data = await res.json();
       if (data?.success && data?.tree) setExplorerTree(data.tree);
-    } catch {}
+    } catch { toast('Failed to fetch explorer tree', 'error'); }
     setExplorerLoading(false);
   }
 
@@ -214,7 +217,7 @@ export default function DashboardPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, type: 'report_explorer', script: '' }),
       });
-    } catch {}
+    } catch { toast('Failed to refresh explorer', 'error'); }
     setTimeout(fetchExplorerTree, 3000);
   }
 
@@ -415,7 +418,7 @@ export default function DashboardPage() {
             {/* Thin context bar */}
             <div className="flex items-center gap-2 px-2.5 h-7 flex-shrink-0 border-b animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
               <button onClick={() => router.push('/projects')} className="border-0 cursor-pointer font-medium px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
-              <span className="text-[10px]" style={{ color: 'var(--border-strong)' }}>/</span>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>/</span>
               <span className="font-medium truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
               <div className="flex-1" />
               <select value={workspaceName} onChange={(e) => {

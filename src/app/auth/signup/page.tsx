@@ -30,7 +30,7 @@ export default function SignupPage() {
         <AuthInput label="Username" type="text" placeholder="Choose a username" value={username} onChange={(e) => setUsername(e.target.value)} />
         <AuthInput label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         <AuthInput label="Password" type="password" placeholder="Create a strong password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        {error && <p className="text-coral-500 text-sm mb-3">{error}</p>}
+        {error && <p className="text-sm mb-3" style={{ color: 'var(--danger)' }}>{error}</p>}
         <AuthButton isLoading={loading}>Create Account</AuthButton>
       </form>
     </AuthLayout>

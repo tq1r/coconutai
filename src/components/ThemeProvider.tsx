@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+const STORAGE_KEY_THEME = 'coconut-theme';
+
 type Theme = 'coconut' | 'midnight' | 'obsidian';
 
 interface ThemeContextType {
@@ -15,7 +17,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('coconut');
 
   useEffect(() => {
-    const saved = localStorage.getItem('coconut-theme') as Theme | null;
+    const saved = localStorage.getItem(STORAGE_KEY_THEME) as Theme | null;
     if (saved && ['coconut', 'midnight', 'obsidian'].includes(saved)) {
       setTheme(saved);
       document.documentElement.setAttribute('data-theme', saved);
@@ -24,7 +26,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const applyTheme = (t: Theme) => {
     setTheme(t);
-    localStorage.setItem('coconut-theme', t);
+    localStorage.setItem(STORAGE_KEY_THEME, t);
     document.documentElement.setAttribute('data-theme', t);
   };
 

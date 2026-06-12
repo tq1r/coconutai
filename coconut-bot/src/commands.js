@@ -1,9 +1,14 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const axios = require("axios");
 
 const ADMIN_DISCORD_ID = process.env.ADMIN_DISCORD_ID || "";
 const API_URL = process.env.COCONUT_API_URL || "https://coconutai.vercel.app";
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
+const PREMIUM_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+}
 
 const isAdmin = (userId) => userId === ADMIN_DISCORD_ID;
 
@@ -38,15 +43,22 @@ const botCommands = [
           )),
     execute: async (interaction) => {
       if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: "❌ You are not authorized to use this command.", ephemeral: true });
+        await interaction.reply({ content: "You are not authorized to use this command.", ephemeral: true });
         return;
       }
       const type = interaction.options.getString("type", true);
       const email = interaction.options.getString("email", true);
       const duration = interaction.options.getString("duration", true);
 
+      if (!isValidEmail(email)) {
+        await interaction.reply({ content: "Invalid email format.", ephemeral: true });
+        return;
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+
       if (type === "premium") {
-        const expiresAt = duration === "lifetime" ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        const expiresAt = duration === "lifetime" ? null : new Date(Date.now() + PREMIUM_DURATION_MS).toISOString();
         const result = await adminApiCall("user", "PATCH", {
           targetUserId: email,
           role: "premium",
@@ -54,16 +66,27 @@ const botCommands = [
           subscription_active: true,
           subscription_expires_at: expiresAt,
         });
-        const durationText = duration === "lifetime" ? "**Lifetime**" : "**30 days (monthly)**";
+        const durationText = duration === "lifetime" ? "Lifetime" : "30 days (monthly)";
         if (result.success) {
-          await interaction.reply({
-            content: `✅ **${email}** granted ${durationText} premium!\nThey can now use all premium AI models.`,
-          });
+          const embed = new EmbedBuilder()
+            .setColor(0x2ecc71)
+            .setTitle("Premium Added")
+            .addFields(
+              { name: "User", value: email, inline: true },
+              { name: "Duration", value: durationText, inline: true },
+              { name: "Expires", value: expiresAt ? new Date(expiresAt).toLocaleDateString() : "Never", inline: true }
+            )
+            .setTimestamp()
+            .setFooter({ text: "Coconut AI" });
+          await interaction.editReply({ embeds: [embed] });
         } else {
-          await interaction.reply({
-            content: `❌ Failed: ${result.error}\nMake sure the user has registered on ${API_URL} with that email.`,
-            ephemeral: true,
-          });
+          const embed = new EmbedBuilder()
+            .setColor(0xe74c3c)
+            .setTitle("Error")
+            .setDescription(`${result.error}\nMake sure the user has registered on ${API_URL} with that email.`)
+            .setTimestamp()
+            .setFooter({ text: "Coconut AI" });
+          await interaction.editReply({ embeds: [embed] });
         }
       }
     },
@@ -76,21 +99,40 @@ const botCommands = [
         opt.setName("email").setDescription("The user's email on Coconut AI").setRequired(true)),
     execute: async (interaction) => {
       if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: "❌ Not authorized.", ephemeral: true });
+        await interaction.reply({ content: "Not authorized.", ephemeral: true });
         return;
       }
       const email = interaction.options.getString("email", true);
+
+      if (!isValidEmail(email)) {
+        await interaction.reply({ content: "Invalid email format.", ephemeral: true });
+        return;
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+
       const result = await adminApiCall("user", "PATCH", {
         targetUserId: email,
         subscription_active: false,
         role: "user",
       });
-      await interaction.reply({
-        content: result.success
-          ? `✅ Premium removed from **${email}**`
-          : `❌ ${result.error}`,
-        ephemeral: true,
-      });
+      if (result.success) {
+        const embed = new EmbedBuilder()
+          .setColor(0x2ecc71)
+          .setTitle("Premium Removed")
+          .addFields({ name: "User", value: email })
+          .setTimestamp()
+          .setFooter({ text: "Coconut AI" });
+        await interaction.editReply({ embeds: [embed] });
+      } else {
+        const embed = new EmbedBuilder()
+          .setColor(0xe74c3c)
+          .setTitle("Error")
+          .setDescription(result.error)
+          .setTimestamp()
+          .setFooter({ text: "Coconut AI" });
+        await interaction.editReply({ embeds: [embed] });
+      }
     },
   },
   {
@@ -101,18 +143,43 @@ const botCommands = [
         opt.setName("email").setDescription("The user's email on Coconut AI").setRequired(true)),
     execute: async (interaction) => {
       if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: "❌ Not authorized.", ephemeral: true });
+        await interaction.reply({ content: "Not authorized.", ephemeral: true });
         return;
       }
       const email = interaction.options.getString("email", true);
+
+      if (!isValidEmail(email)) {
+        await interaction.reply({ content: "Invalid email format.", ephemeral: true });
+        return;
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+
       const result = await adminApiCall(`user?targetUserId=${encodeURIComponent(email)}`, "GET");
-      const userInfo = result.user
-        ? `Email: ${result.user.email || "N/A"}\nUsername: ${result.user.username || "N/A"}\nRole: ${result.user.role || "user"}\nPremium: ${result.user.subscription_active ? "✅ Active" : "❌ Inactive"}\nExpires: ${result.user.subscription_expires_at ? new Date(result.user.subscription_expires_at).toLocaleDateString() : "Never"}`
-        : "No account found with that email.";
-      await interaction.reply({
-        content: `🔍 **${email}**\n\`\`\`${userInfo}\`\`\``,
-        ephemeral: true,
-      });
+      if (result.user) {
+        const u = result.user;
+        const embed = new EmbedBuilder()
+          .setColor(0x3498db)
+          .setTitle("User Lookup")
+          .addFields(
+            { name: "Email", value: u.email || "N/A", inline: true },
+            { name: "Username", value: u.username || "N/A", inline: true },
+            { name: "Role", value: u.role || "user", inline: true },
+            { name: "Premium Status", value: u.subscription_active ? "Active" : "Inactive", inline: true },
+            { name: "Expires", value: u.subscription_expires_at ? new Date(u.subscription_expires_at).toLocaleDateString() : "Never", inline: true }
+          )
+          .setTimestamp()
+          .setFooter({ text: "Coconut AI" });
+        await interaction.editReply({ embeds: [embed] });
+      } else {
+        const embed = new EmbedBuilder()
+          .setColor(0xe74c3c)
+          .setTitle("Error")
+          .setDescription("No account found with that email.")
+          .setTimestamp()
+          .setFooter({ text: "Coconut AI" });
+        await interaction.editReply({ embeds: [embed] });
+      }
     },
   },
   {
@@ -121,10 +188,16 @@ const botCommands = [
       .setDescription("Show platform statistics"),
     execute: async (interaction) => {
       if (!isAdmin(interaction.user.id)) {
-        await interaction.reply({ content: "❌ Not authorized.", ephemeral: true });
+        await interaction.reply({ content: "Not authorized.", ephemeral: true });
         return;
       }
-      await interaction.reply({ content: "📊 Check the dashboard for usage stats.", ephemeral: true });
+      const embed = new EmbedBuilder()
+        .setColor(0x3498db)
+        .setTitle("Usage Statistics")
+        .setDescription("Check the dashboard for usage stats.")
+        .setTimestamp()
+        .setFooter({ text: "Coconut AI" });
+      await interaction.reply({ embeds: [embed], ephemeral: true });
     },
   },
 ];

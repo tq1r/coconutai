@@ -27,6 +27,9 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           title={tab.label}
+          aria-label={tab.label}
+          role="tab"
+          aria-selected={activeTab === tab.id}
           style={{
             width: '36px', height: '32px', borderRadius: '4px', border: 'none',
             background: activeTab === tab.id ? 'var(--accent-soft)' : 'transparent',

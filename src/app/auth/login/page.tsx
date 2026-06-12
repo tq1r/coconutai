@@ -35,7 +35,7 @@ export default function LoginPage() {
         <div className="flex items-center justify-between mb-4">
           <Link href="/auth/reset-password" className="text-xs no-underline" style={{ color: 'var(--text-muted)' }}>Forgot password?</Link>
         </div>
-        {error && <p className="text-coral-500 text-sm mb-3">{error}</p>}
+        {error && <p className="text-sm mb-3" style={{ color: 'var(--danger)' }}>{error}</p>}
         <AuthButton isLoading={loading}>Sign In</AuthButton>
       </form>
     </AuthLayout>

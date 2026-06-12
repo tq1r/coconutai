@@ -15,7 +15,6 @@
 local PLUGIN_NAME = "Coconut AI"
 local API_BASE = "https://coconutai.vercel.app/api/plugin"
 local POLL_INTERVAL = 2
-local RECONNECT_DELAY = 5
 
 local plugin = Plugin()
 local toolbar = plugin:CreateToolbar(PLUGIN_NAME)
@@ -47,8 +46,6 @@ local C = {
 local state = {
 	sessionCode = nil,
 	isPolling = false,
-	connection = nil,
-	reconnectThread = nil,
 	outputLines = {},
 	isDark = false,
 }
@@ -86,14 +83,6 @@ local function padding(l, r, t, b)
 	})
 end
 
-local function sep()
-	return ui("Frame", {
-		BackgroundColor3 = C.border,
-		BorderSizePixel = 0,
-		Size = UDim2.new(1, -20, 0, 1),
-	})
-end
-
 local function applyTheme()
 	local bg = if state.isDark then C.bgDark else C.bg
 	local surf = if state.isDark then C.surfaceDark else C.surface
@@ -128,7 +117,7 @@ local dockInfo = DockWidgetPluginGuiInfo.new(
 	360, 600
 )
 local widget = plugin:CreateDockWidgetPluginGui(PLUGIN_NAME, dockInfo)
-widget.Title = "🥥 Coconut AI"
+widget.Title = "Coconut AI"
 
 -- ── Build UI ───────────────────────────────────────────
 local mainFrame = ui("Frame", {
@@ -152,7 +141,7 @@ local headerFrame = ui("Frame", {
 	}),
 	ui("TextLabel", {
 		BackgroundTransparency = 1,
-		Text = "🥥",
+		Text = "CA",
 		TextSize = 22,
 		Size = UDim2.new(0, 30, 0, 30),
 	}),
@@ -316,9 +305,10 @@ local outputContainer = ui("ScrollingFrame", {
 	BackgroundColor3 = C.surface,
 	BorderSizePixel = 0,
 	Size = UDim2.new(1, 0, 1, -210),
-	CanvasSize = UDim2.new(0, 0, 0, 0),
-	ScrollBarThickness = 4,
+	AutomaticCanvasSize = Enum.AutomaticSize.Y,
+	ScrollBarThickness = 6,
 	ScrollBarImageColor3 = C.border,
+	ElasticBehavior = Enum.ScrollingFrameElasticBehavior.Never,
 }, {
 	corner(10), stroke(),
 })
@@ -358,8 +348,11 @@ local function addLog(text, color, isBold, timestamp)
 	line:SetAttribute("color", color)
 	table.insert(state.outputLines, line)
 	line.Parent = outputContainer
-	outputContainer.CanvasSize = UDim2.new(0, 0, 0, outputLayout.AbsoluteContentSize.Y + 4)
-	task.wait(0.02)
+	local children = outputContainer:GetChildren()
+	if #children > 201 then
+		children[2]:Destroy()
+		table.remove(state.outputLines, 1)
+	end
 	outputContainer.CanvasPosition = Vector2.new(0, outputLayout.AbsoluteContentSize.Y)
 end
 
@@ -372,14 +365,6 @@ end
 -- ── Session Management ─────────────────────────────────
 local function stopPolling()
 	state.isPolling = false
-	if state.connection then
-		state.connection:Disconnect()
-		state.connection = nil
-	end
-	if state.reconnectThread then
-		coroutine.close(state.reconnectThread)
-		state.reconnectThread = nil
-	end
 	state.sessionCode = nil
 	codeLabel.Text = "---"
 	createBtn.Visible = true
@@ -427,59 +412,6 @@ local function getExplorerTree()
 	return tree
 end
 
-local function poll()
-	while state.isPolling do
-		task.wait(POLL_INTERVAL)
-		if not state.isPolling then break end
-
-		local ok, result = pcall(function()
-			local http = game:GetService("HttpService")
-			local resp = http:GetAsync(API_BASE .. "/poll?code=" .. state.sessionCode)
-			return http:JSONDecode(resp)
-		end)
-
-		if ok and result and result.success then
-			if result.commands and #result.commands > 0 then
-				for _, cmd in ipairs(result.commands) do
-					if cmd.type == "report_explorer" then
-						addLog("▶ Reporting explorer tree", C.warning, false, true)
-						local s, err = pcall(function()
-							local http = game:GetService("HttpService")
-							local tree = getExplorerTree()
-							local json = http:JSONEncode(tree)
-							http:PostAsync(API_BASE .. "/explorer", json, Enum.HttpContentType.ApplicationJson)
-						end)
-						if s then
-							addLog("✓ Explorer tree sent", C.success, true, true)
-						else
-							addLog("✗ Failed to report explorer: " .. tostring(err), C.error, false, true)
-						end
-					else
-						addLog("▶ Received script from web app", C.warning, false, true)
-						local s, err = pcall(function()
-							local fn, e = loadstring(cmd.code or cmd)
-							if not fn then error(e) end
-							return fn()
-						end)
-						if s then
-							addLog("✓ Script executed successfully", C.success, true, true)
-						else
-							addLog("✗ Script error: " .. tostring(err), C.error, false, true)
-						end
-					end
-				end
-			end
-			setStatus("Connected · " .. state.sessionCode, C.primary, C.primary)
-			disconnectBtn.BackgroundColor3 = C.error
-			disconnectBtn.Text = "Disconnect"
-		else
-			setStatus("Connection lost (retrying...)", C.error, C.error)
-			disconnectBtn.BackgroundColor3 = C.warning
-			disconnectBtn.Text = "Reconnecting"
-		end
-	end
-end
-
 local function startPolling(code)
 	state.sessionCode = code
 	codeLabel.Text = code
@@ -488,10 +420,77 @@ local function startPolling(code)
 	disconnectBtn.Text = "Disconnect"
 	disconnectBtn.BackgroundColor3 = C.error
 	setStatus("Listening for commands...", C.primary, C.primary)
-	addLog("🚀 Session " .. code .. " active", C.primary, true, true)
+	addLog("Session " .. code .. " active", C.primary, true, true)
 
 	state.isPolling = true
-	state.connection = game:GetService("RunService").Heartbeat:Connect(poll)
+	task.spawn(function()
+		while state.isPolling do
+			task.wait(POLL_INTERVAL)
+			if not state.isPolling then break end
+
+			local ok, result = pcall(function()
+				local http = game:GetService("HttpService")
+				local encodedCode = http:UrlEncode(state.sessionCode)
+				local resp = http:GetAsync(API_BASE .. "/poll?code=" .. encodedCode)
+				return http:JSONDecode(resp)
+			end)
+
+			if ok and result and result.success then
+				if result.commands and #result.commands > 0 then
+					for _, cmd in ipairs(result.commands) do
+						if cmd.type == "report_explorer" then
+							addLog("> Reporting explorer tree", C.warning, false, true)
+							local s, err = pcall(function()
+								local http = game:GetService("HttpService")
+								local tree = getExplorerTree()
+								local json = http:JSONEncode(tree)
+								http:PostAsync(API_BASE .. "/explorer", json, Enum.HttpContentType.ApplicationJson)
+							end)
+							if s then
+								addLog("OK Explorer tree sent", C.success, true, true)
+							else
+								addLog("X Failed to report explorer: " .. tostring(err), C.error, false, true)
+							end
+						else
+							addLog("> Received script from web app", C.warning, false, true)
+							local s, err = pcall(function()
+								local fn, e = loadstring(cmd.code or cmd)
+								if not fn then error(e) end
+								return fn()
+							end)
+							if s then
+								addLog("OK Script executed successfully", C.success, true, true)
+							else
+								addLog("X Script error: " .. tostring(err), C.error, false, true)
+							end
+						end
+					end
+				end
+				setStatus("Connected - " .. state.sessionCode, C.primary, C.primary)
+				disconnectBtn.BackgroundColor3 = C.error
+				disconnectBtn.Text = "Disconnect"
+			elseif not ok then
+				local errMsg = tostring(result)
+				if errMsg:find("401") or errMsg:find("403") then
+					addLog("Authentication failed - reconnect the plugin", C.error, false, true)
+					stopPolling()
+				elseif errMsg:find("50%d") then
+					addLog("Server error (500) - try again later", C.error, false, true)
+				elseif errMsg:find("failed") or errMsg:find("refused") or errMsg:find("timeout") then
+					addLog("Network error - check your connection", C.error, false, true)
+				else
+					addLog("Connection error: " .. errMsg, C.error, false, true)
+				end
+				setStatus("Connection lost", C.error, C.error)
+				disconnectBtn.BackgroundColor3 = C.warning
+				disconnectBtn.Text = "Reconnecting"
+			else
+				setStatus("Connection lost", C.error, C.error)
+				disconnectBtn.BackgroundColor3 = C.warning
+				disconnectBtn.Text = "Reconnecting"
+			end
+		end
+	end)
 end
 
 -- ── Button Handlers ────────────────────────────────────
@@ -513,9 +512,21 @@ createBtn.MouseButton1Click:Connect(function()
 
 	if ok and result and result.success then
 		startPolling(result.code)
-		addLog("🔗 Session created! Enter code in web app", C.success, true, true)
+		addLog("Session created! Enter code in web app", C.success, true, true)
+	elseif not ok then
+		local errMsg = tostring(result)
+		if errMsg:find("401") or errMsg:find("403") then
+			addLog("Authentication failed - reconnect the plugin", C.error, true, true)
+		elseif errMsg:find("50%d") then
+			addLog("Server error (500) - try again later", C.error, true, true)
+		elseif errMsg:find("failed") or errMsg:find("refused") or errMsg:find("timeout") then
+			addLog("Network error - check your connection", C.error, true, true)
+		else
+			addLog("Failed to create session: " .. errMsg, C.error, true, true)
+		end
+		setStatus("Error", C.error, C.error)
 	else
-		addLog("✗ Failed to create session", C.error, true, true)
+		addLog("Server rejected request", C.error, true, true)
 		setStatus("Error", C.error, C.error)
 	end
 end)
@@ -537,6 +548,6 @@ toggleBtn.Click:Connect(function()
 end)
 
 -- ── Startup ────────────────────────────────────────────
-addLog("🥥 Coconut AI v2.0 loaded", C.primary, true)
+addLog("Coconut AI v2.0 loaded", C.primary, true)
 addLog("Click 'Create Session' and enter the code in the web app to connect", C.textSec, false)
 setStatus("Ready", C.textSec, C.textMuted)

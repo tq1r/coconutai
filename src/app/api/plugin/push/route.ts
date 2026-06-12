@@ -19,12 +19,12 @@ export async function POST(request: Request) {
   }
 
   const command = {
+    ...session,
     id: generateId(),
     type: type || 'script',
     code: script || '',
     executed: false,
     created_at: now(),
-    ...session,
     commands: [...(session.commands || []), { id: generateId(), type: type || 'script', code: script || '', executed: false, created_at: now() }],
   };
 
