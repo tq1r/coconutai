@@ -134,6 +134,7 @@ async function requestLocal(prompt: string, model: AIModel): Promise<AIResponse>
     } catch { /* fall through to local */ }
   }
 
+  const p = prompt.toLowerCase().trim();
   const categories: [RegExp, string][] = [
     [/combat|fight|damage|sword|weapon|attack|enemy|health/, `-- Combat System (TXMO)
 local CombatService = {}
