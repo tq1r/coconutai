@@ -83,6 +83,8 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [files, setFiles] = useState<ScriptFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filesRef = useRef(files);
   const [activeTab, setActiveTab] = useState<TabId>('explorer');
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'error' | 'success'>('error');
@@ -172,6 +174,10 @@ export default function DashboardPage() {
       const payload = await res.json();
       if (payload?.success && payload.data) {
         setWorkspaceName(name);
+        const savedFiles: ScriptFile[] = payload.data.metadata?.files || [];
+        if (savedFiles.length > 0) {
+          setFiles(savedFiles);
+        }
         await loadProject(name, projectId);
         return;
       }
@@ -228,8 +234,22 @@ export default function DashboardPage() {
     }
   }, []);
 
+  useEffect(() => { filesRef.current = files; }, [files]);
+
+  function scheduleSave() {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const current = filesRef.current;
+      fetch('/api/workspace/session', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspace_name: workspaceName, metadata: { files: current } }),
+      }).catch(() => {});
+    }, 800);
+  }
+
   function handleCodeChange(value: string) {
     setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: value, updatedAt: new Date().toISOString() } : f));
+    scheduleSave();
   }
 
   async function handleGenerate() {
