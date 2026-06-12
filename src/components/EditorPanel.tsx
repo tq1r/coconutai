@@ -40,24 +40,26 @@ export default function EditorPanel({ code, onChange, activeFile }: EditorPanelP
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center px-5 h-11 border-b" style={{ borderColor: 'var(--border-color)' }}>
+      <div className="flex items-center px-6 h-11 border-b" style={{ borderColor: 'var(--border-color)' }}>
         <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>📄 {activeFile?.name || 'untitled.lua'}</span>
       </div>
-      <div className="flex-1 flex overflow-hidden">
-        <div className="select-none text-right px-3 py-3 leading-[22px] border-r overflow-hidden font-mono" style={{ color: 'var(--line-numbers)', borderColor: 'var(--border-color)', background: 'var(--bg-surface)', minWidth: 40, fontSize: 12 }}>
+      <div className="flex-1 flex overflow-hidden" style={{ minHeight: 0 }}>
+        <div className="select-none text-right py-5 px-4 leading-[22px] border-r overflow-hidden font-mono flex-shrink-0" style={{ color: 'var(--line-numbers)', borderColor: 'var(--border-color)', background: 'var(--bg-surface)', fontSize: 13, width: '52px' }}>
           {Array.from({ length: lineCount }, (_, i) => (
             <div key={i}>{i + 1}</div>
           ))}
         </div>
-        <textarea
-          ref={textareaRef}
-          value={code}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          spellCheck={false}
-          className="flex-1 outline-none resize-none border-none font-mono p-4"
-          style={{ color: 'var(--text-primary)', background: 'var(--bg-code)', tabSize: 2, fontSize: 13, lineHeight: '22px' }}
-        />
+        <div className="flex-1 flex" style={{ background: 'var(--bg-code)' }}>
+          <textarea
+            ref={textareaRef}
+            value={code}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            spellCheck={false}
+            className="flex-1 outline-none resize-none border-none"
+            style={{ color: 'var(--text-primary)', background: 'transparent', tabSize: 2, fontSize: 13, lineHeight: '22px', padding: '20px 24px' }}
+          />
+        </div>
       </div>
     </div>
   );

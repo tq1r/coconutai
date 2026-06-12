@@ -47,7 +47,7 @@ export default function Sidebar({ activeTab, onTabChange, children }: SidebarPro
           </button>
         ))}
       </div>
-      <div className="flex flex-col flex-1 overflow-hidden" style={{ width: '280px', minWidth: '280px', maxWidth: '320px' }}>
+      <div className="flex flex-col flex-1 overflow-hidden" style={{ width: '100%', minWidth: '240px', maxWidth: '100%' }}>
         {children}
       </div>
     </div>

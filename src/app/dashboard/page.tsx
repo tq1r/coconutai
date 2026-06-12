@@ -302,36 +302,40 @@ export default function DashboardPage() {
                     </select>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                  <div className="flex-1 overflow-y-auto" style={{ padding: '12px 14px' }}>
                     {chatHistory.length === 0 ? (
-                      <div className="text-center mt-14 px-4">
-                        <p className="text-3xl mb-3">🏝️</p>
+                      <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '300px' }}>
+                        <p className="text-3xl mb-4">🏝️</p>
                         <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate Roblox code</p>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, economy, or anything</p>
                       </div>
                     ) : chatHistory.map((msg, i) => (
                       <div key={i}>
                         {msg.role === 'user' && (
-                          <div className="flex items-start gap-2">
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
-                            <div>
-                              <p className="text-[10px] font-semibold mb-0.5" style={{ color: 'var(--text-muted)' }}>You</p>
-                              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{msg.text}</p>
+                          <div className="flex items-start gap-2" style={{ marginBottom: '14px' }}>
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>You</p>
+                              <div className="rounded-xl px-3.5 py-2.5 inline-block" style={{ background: 'var(--accent-soft)', color: 'var(--text-primary)', maxWidth: '90%' }}>
+                                <p className="text-sm" style={{ lineHeight: 1.5 }}>{msg.text}</p>
+                              </div>
                             </div>
                           </div>
                         )}
                         {msg.role === 'assistant' && (
-                          <div className="rounded-xl p-3 border" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }}>
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <span>🤖</span>
-                              <span className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Coconut AI</span>
+                          <div className="flex items-start gap-2" style={{ marginBottom: '14px' }}>
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm" style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-color)' }}>🤖</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
+                              <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
+                                <pre className="whitespace-pre-wrap font-sans text-sm" style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}>{msg.text}</pre>
+                                {(msg.text.includes('function') || msg.text.includes('local ')) && (
+                                  <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2.5 text-xs text-white font-medium px-3.5 py-1.5 rounded-lg border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
+                                    Apply to Editor
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>{msg.text}</pre>
-                            {(msg.text.includes('function') || msg.text.includes('local ')) && (
-                              <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-xs text-white px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all border-0 cursor-pointer" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
-                                Apply to Editor
-                              </button>
-                            )}
                           </div>
                         )}
                       </div>
@@ -372,7 +376,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Editor */}
-          <main className="flex-1 flex flex-col overflow-hidden" style={{ padding: '10px' }}>
+          <main className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 16px' }}>
             <div className="flex-1 flex flex-col overflow-hidden rounded-xl border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)' }}>
               <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
             </div>
