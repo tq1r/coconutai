@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import EditorPanel from '@/components/EditorPanel';
 import Sidebar from '@/components/Sidebar';
@@ -64,6 +65,7 @@ function Toast({ message, type, onClose }: { message: string; type: 'error' | 's
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [userName, setUserName] = useState('Creator');
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -73,16 +75,12 @@ export default function DashboardPage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceSession[]>([]);
   const [workspaceName, setWorkspaceName] = useState(DEFAULT_WORKSPACE);
-  const [projects, setProjects] = useState<WorkspaceProject[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [files, setFiles] = useState<ScriptFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('explorer');
-  const [showNewFileInput, setShowNewFileInput] = useState(false);
-  const [newFileName, setNewFileName] = useState('');
-  const [creating, setCreating] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'error' | 'success'>('error');
   const [explorerTree, setExplorerTree] = useState<any[] | null>(null);
@@ -95,14 +93,16 @@ export default function DashboardPage() {
 
   const activeFile = files.find((f) => f.id === activeFileId);
   const code = activeFile?.content ?? DEFAULT_CODE;
-  const showIde = activeProjectId !== null;
 
   useEffect(() => {
-    fetchCurrentUser(); fetchModels(); fetchWorkspaceList();
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('projectId');
+    if (!pid) { router.replace('/projects'); return; }
+    setActiveProjectId(pid);
+    setActiveFileId(pid);
+    fetchCurrentUser(); fetchModels(); fetchWorkspaceList(pid);
     const saved = localStorage.getItem('coconut-plugin-code');
     if (saved) setPluginCodeAndPersist(saved);
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('roblox') === 'linked') fetchCurrentUser();
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
@@ -136,7 +136,7 @@ export default function DashboardPage() {
         setUserEmail(data.user.email || '');
         setUserRole(data.user.role || null);
       }
-    } catch { /* ignore */ }
+    } catch {}
   }
 
   async function fetchModels() {
@@ -148,10 +148,10 @@ export default function DashboardPage() {
         if (!data.models.find((m: AIModel) => m.id === selectedModel))
           setSelectedModel(data.models[0]?.id ?? 'gpt-4o');
       }
-    } catch { /* ignore */ }
+    } catch {}
   }
 
-  async function fetchWorkspaceList() {
+  async function fetchWorkspaceList(projectId: string) {
     try {
       const res = await fetch('/api/workspace/list');
       const payload = await res.json();
@@ -159,17 +159,17 @@ export default function DashboardPage() {
       setWorkspaces(payload.data || []);
       const first = payload.data?.[0]?.workspace_name ?? DEFAULT_WORKSPACE;
       setWorkspaceName(first);
-      await fetchWorkspaceSession(first);
-    } catch { /* ignore */ }
+      await fetchWorkspaceSession(first, projectId);
+    } catch {}
   }
 
-  async function fetchWorkspaceSession(name: string) {
+  async function fetchWorkspaceSession(name: string, projectId: string) {
     try {
       const res = await fetch(`/api/workspace/session?workspace_name=${encodeURIComponent(name)}`);
       const payload = await res.json();
       if (payload?.success && payload.data) {
         setWorkspaceName(name);
-        await fetchProjects(name, payload.data?.metadata?.active_project_id);
+        await loadProject(name, projectId);
         return;
       }
       const createRes = await fetch('/api/workspace/session', {
@@ -179,85 +179,25 @@ export default function DashboardPage() {
       const createPayload = await createRes.json();
       if (createPayload?.success) {
         setWorkspaceName(name);
-        await fetchProjects(name);
+        await loadProject(name, projectId);
       }
-    } catch { /* ignore */ }
+    } catch {}
   }
 
-  async function fetchProjects(name: string, preferredProjectId?: string | null) {
+  async function loadProject(name: string, projectId: string) {
     try {
       const res = await fetch(`/api/workspace/projects?workspace_name=${encodeURIComponent(name)}`);
       const payload = await res.json();
       if (!payload?.success) return;
-      setProjects(payload.data || []);
-      if (preferredProjectId && payload.data.some((p: WorkspaceProject) => p.id === preferredProjectId)) {
-        setActiveProjectId(preferredProjectId);
-        setActiveFileId(preferredProjectId);
+      const project = (payload.data || []).find((p: WorkspaceProject) => p.id === projectId);
+      if (!project) { router.replace('/projects'); return; }
+      const existing = files.find((f) => f.projectId === projectId);
+      if (!existing) {
+        const newFile: ScriptFile = { id: projectId, name: project.name + '.lua', content: `-- ${project.name}\n\n`, language: 'lua', projectId, updatedAt: new Date().toISOString() };
+        setFiles((prev) => [...prev, newFile]);
       }
-    } catch { /* ignore */ }
-  }
-
-  async function deleteProject(projectId: string) {
-    if (!confirm('Delete this project?')) return;
-    try {
-      const res = await fetch(`/api/workspace/projects?project_id=${projectId}`, { method: 'DELETE' });
-      const payload = await res.json();
-      if (payload?.success) {
-        setProjects((prev) => prev.filter((p) => p.id !== projectId));
-        if (activeProjectId === projectId) { setActiveProjectId(null); setActiveFileId(null); }
-        toast('Project deleted', 'success');
-      } else toast(payload?.error || 'Delete failed', 'error');
-    } catch { toast('Unable to delete project', 'error'); }
-  }
-
-  function openProject(projectId: string) {
-    const project = projects.find((p) => p.id === projectId);
-    if (!project) return;
-    setActiveProjectId(projectId);
-    const existing = files.find((f) => f.projectId === projectId);
-    if (existing) setActiveFileId(existing.id);
-    else {
-      const newFile: ScriptFile = { id: projectId, name: project.name + '.lua', content: `-- ${project.name}\n\n`, language: 'lua', projectId, updatedAt: new Date().toISOString() };
-      setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
-    }
-    setActiveTab('explorer');
-  }
-
-  function goToProjects() {
-    setActiveProjectId(null);
-    setActiveFileId(null);
-    setActiveTab('explorer');
-  }
-
-  async function createProject(name: string) {
-    if (!name.trim()) { toast('Enter a project name', 'error'); return; }
-    setCreating(true);
-    try {
-      const res = await fetch('/api/workspace/projects', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspace_name: workspaceName, name: name.trim(), description: '' }),
-      });
-      const payload = await res.json();
-      if (!payload?.success) {
-        toast(payload?.error || 'Failed to create project', 'error');
-        return;
-      }
-      const newFile: ScriptFile = {
-        id: payload.data.id, name: name.trim() + '.lua',
-        content: `-- ${name.trim()}\n\n`,
-        language: 'lua', projectId: payload.data.id, updatedAt: new Date().toISOString(),
-      };
-      setFiles((prev) => [...prev, newFile]);
-      setShowNewFileInput(false); setNewFileName('');
-      await fetchProjects(workspaceName, payload.data.id);
-      setActiveProjectId(payload.data.id);
-      setActiveFileId(payload.data.id);
-      setActiveTab('explorer');
-      toast('Project created', 'success');
-    } catch (e) {
-      console.error('Create failed', e);
-      toast('Unable to create project', 'error');
-    } finally { setCreating(false); }
+      setActiveFileId(projectId);
+    } catch {}
   }
 
   async function fetchExplorerTree() {
@@ -268,7 +208,7 @@ export default function DashboardPage() {
       const res = await fetch(`/api/plugin/explorer?code=${code}`);
       const data = await res.json();
       if (data?.success && data?.tree) setExplorerTree(data.tree);
-    } catch { /* ignore */ }
+    } catch {}
     setExplorerLoading(false);
   }
 
@@ -281,7 +221,7 @@ export default function DashboardPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, type: 'report_explorer', script: '' }),
       });
-    } catch { /* ignore */ }
+    } catch {}
     setTimeout(fetchExplorerTree, 3000);
   }
 
@@ -302,7 +242,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/ai/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, modelId: selectedModel, workspaceName, projectId: activeProjectId, projectName: projects.find((p) => p.id === activeProjectId)?.name, sessionCode: pluginCode }),
+        body: JSON.stringify({ prompt, modelId: selectedModel, workspaceName, projectId: activeProjectId, projectName: activeFile?.name, sessionCode: pluginCode }),
       });
       const data = await res.json();
       if (!data?.success) { setError(data?.error || 'Generation failed'); return; }
@@ -337,16 +277,14 @@ export default function DashboardPage() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-2.5 h-7 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>Explorer</span>
-          {showIde && (
-            <button onClick={goToProjects} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>Projects</button>
-          )}
+          <button onClick={() => router.push('/projects')} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>Projects</button>
         </div>
 
         {pluginCode.trim().length === 6 && (
           <div className="border-b" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="flex items-center justify-between px-2.5 py-1">
-                  <span className="text-[9px] font-semibold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
-                  <button onClick={() => refreshExplorerTree()} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>+</button>
+            <div className="flex items-center justify-between px-2.5 py-1">
+              <span className="text-[9px] font-semibold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
+              <button onClick={() => refreshExplorerTree()} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>+</button>
             </div>
             <div className="px-1 pb-1.5 max-h-[200px] overflow-y-auto">
               {explorerTree ? (
@@ -361,24 +299,24 @@ export default function DashboardPage() {
         )}
 
         <div className="px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-          <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{showIde ? 'SCRIPTS' : 'PROJECTS'}</span>
+          <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>SCRIPTS</span>
         </div>
         <div className="flex-1 overflow-y-auto py-0.5">
-          {projects.length === 0 ? (
-            <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-muted)' }}>No projects yet</p>
+          {files.length === 0 ? (
+            <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-muted)' }}>No files</p>
           ) : (
-            projects.map((project) => (
+            files.map((file) => (
               <button
-                key={project.id}
-                onClick={() => openProject(project.id)}
-                className="w-full text-left px-3 py-1 text-xs transition-all border-0 cursor-pointer flex items-center gap-2"
+                key={file.id}
+                onClick={() => setActiveFileId(file.id)}
+                className="w-full text-left px-3 py-1 text-[11px] transition-all border-0 cursor-pointer flex items-center gap-2"
                 style={{
-                  background: activeProjectId === project.id ? 'var(--accent-soft)' : 'transparent',
-                  color: activeProjectId === project.id ? 'var(--accent)' : 'var(--text-secondary)',
+                  background: activeFileId === file.id ? 'var(--accent-soft)' : 'transparent',
+                  color: activeFileId === file.id ? 'var(--accent)' : 'var(--text-secondary)',
                 }}
               >
                 <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>L</span>
-                <span className="truncate">{project.name}</span>
+                <span className="truncate">{file.name}</span>
               </button>
             ))
           )}
@@ -483,103 +421,31 @@ export default function DashboardPage() {
           <main className="flex-1 flex flex-col overflow-hidden">
             {/* Thin context bar */}
             <div className="flex items-center gap-2 px-2.5 h-7 flex-shrink-0 border-b animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
-              {showIde ? (
-                <>
-                  <button onClick={goToProjects} className="border-0 cursor-pointer font-medium px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
-                  <span className="text-[10px]" style={{ color: 'var(--border-strong)' }}>/</span>
-                  <span className="font-medium truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
-                  <div className="flex-1" />
-                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '120px' }}>
-                    {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
-                  </select>
-                  {pluginCode.trim().length === 6 && (
-                    <span className="flex items-center gap-1 text-[10px]" style={{ color: pluginConnected ? 'var(--accent)' : '#fbbf24' }}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${pluginConnected ? 'animate-breathe' : ''}`} style={{ background: pluginConnected ? 'var(--accent)' : '#fbbf24' }} />
-                      Studio
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <span className="text-[11px]" style={{ color: 'var(--accent)', fontWeight: 600 }}>Coconut AI</span>
-                  <div className="flex-1" />
-                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '120px' }}>
-                    {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
-                  </select>
-                </>
+              <button onClick={() => router.push('/projects')} className="border-0 cursor-pointer font-medium px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
+              <span className="text-[10px]" style={{ color: 'var(--border-strong)' }}>/</span>
+              <span className="font-medium truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
+              <div className="flex-1" />
+              <select value={workspaceName} onChange={(e) => {
+                setWorkspaceName(e.target.value);
+                const pid = new URLSearchParams(window.location.search).get('projectId');
+                if (pid) fetchWorkspaceSession(e.target.value, pid);
+              }} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '120px' }}>
+                {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
+              </select>
+              {pluginCode.trim().length === 6 && (
+                <span className="flex items-center gap-1 text-[10px]" style={{ color: pluginConnected ? 'var(--accent)' : '#fbbf24' }}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${pluginConnected ? 'animate-breathe' : ''}`} style={{ background: pluginConnected ? 'var(--accent)' : '#fbbf24' }} />
+                  Studio
+                </span>
               )}
             </div>
 
-            {!showIde ? (
-              /* ── Welcome Page ─────────────────────────── */
-              <div className="flex-1 flex items-start justify-center overflow-y-auto" style={{ padding: '32px 24px' }}>
-                <div className="w-full max-w-2xl">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Projects</h1>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Select a project to open the workspace</p>
-                    </div>
-                    <button
-                      onClick={() => setShowNewFileInput(!showNewFileInput)}
-                      className="text-[11px] font-medium px-3 py-1.5 border-0 cursor-pointer"
-                      style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}
-                    >+ New</button>
-                  </div>
-
-                  {showNewFileInput && (
-                    <div className="mb-5 p-3 border" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
-                      <input
-                        value={newFileName}
-                        onChange={(e) => setNewFileName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && !creating && createProject(newFileName)}
-                        placeholder="Project name..."
-                        className="w-full outline-none px-3 py-1.5 text-xs"
-                        style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
-                        autoFocus
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button onClick={() => createProject(newFileName)} disabled={creating} className="px-3 py-1.5 text-[11px] font-medium border-0 cursor-pointer" style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px', opacity: creating ? 0.6 : 1 }}>
-                          {creating ? 'Creating...' : 'Create'}
-                        </button>
-                        <button onClick={() => { setShowNewFileInput(false); setNewFileName(''); }} className="px-3 py-1.5 text-[11px] font-medium border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', borderRadius: '4px', background: 'transparent' }}>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {projects.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center" style={{ paddingTop: '80px' }}>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No projects yet. Create one to get started.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 stagger-2">
-                      {projects.map((project) => (
-                        <div
-                          key={project.id}
-                          onClick={() => openProject(project.id)}
-                          className="border cursor-pointer animate-slide-up animate-scale-hover"
-                          style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px', padding: '14px 16px' }}
-                        >
-                          <div className="flex items-center gap-2.5 mb-1.5">
-                            <span className="text-[11px] font-bold" style={{ color: 'var(--accent)' }}>L</span>
-                            <span className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</span>
-                          </div>
-                          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Updated {new Date(project.updated_at).toLocaleDateString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            {/* Code Editor */}
+            <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '6px' }}>
+              <div className="flex-1 flex flex-col overflow-hidden border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
+                <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
               </div>
-            ) : (
-              /* ── Code Editor ──────────────────────────── */
-              <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '6px' }}>
-                <div className="flex-1 flex flex-col overflow-hidden border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
-                  <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
-                </div>
-              </div>
-            )}
+            </div>
           </main>
 
           {/* Right Panel — Chat */}
@@ -607,7 +473,7 @@ export default function DashboardPage() {
             {userRole === 'admin' && <span style={{ color: '#ef4444' }}>Admin</span>}
             <span style={{ color: 'var(--text-secondary)' }}>{userName}</span>
             {pluginStatus && <span>{pluginStatus}</span>}
-            {showIde && <><span style={{ color: 'var(--border-strong)' }}>|</span><span>Ln 1</span><span>Luau</span></>}
+            {activeProjectId && <><span style={{ color: 'var(--border-strong)' }}>|</span><span>Ln 1</span><span>Luau</span></>}
           </div>
         </footer>
       </div>
