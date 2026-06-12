@@ -39,8 +39,11 @@ export async function createWorkspaceProject(
     metadata: { active_project_id: id, active_project_name: payload.name },
   });
 
-  const row = await findProjectById(userId, id);
-  return row ? toProject(row) : null;
+  return toProject({
+    id, user_id: userId, workspace_id: workspace.id, name: payload.name,
+    description: payload.description ?? null, status: 'active',
+    metadata: payload.metadata ?? null, created_at: t, updated_at: t,
+  });
 }
 
 export async function getWorkspaceProject(userId: string, projectId: string): Promise<WorkspaceProject | null> {
@@ -51,13 +54,21 @@ export async function getWorkspaceProject(userId: string, projectId: string): Pr
 export async function updateWorkspaceProject(
   userId: string, projectId: string, payload: { name?: string; description?: string | null; metadata?: Record<string, any> | null }
 ): Promise<WorkspaceProject | null> {
+  const existing = await findProjectById(userId, projectId);
+  if (!existing) return null;
+  const updated = {
+    ...existing,
+    ...(payload.name !== undefined && { name: payload.name }),
+    ...(payload.description !== undefined && { description: payload.description }),
+    ...(payload.metadata !== undefined && { metadata: payload.metadata }),
+    updated_at: now(),
+  };
   await updateProject(projectId, {
     ...(payload.name !== undefined && { name: payload.name }),
     ...(payload.description !== undefined && { description: payload.description }),
     ...(payload.metadata !== undefined && { metadata: payload.metadata }),
   });
-  const row = await findProjectById(userId, projectId);
-  return row ? toProject(row) : null;
+  return toProject(updated);
 }
 
 export async function deleteWorkspaceProject(userId: string, projectId: string): Promise<boolean> {
