@@ -1,6 +1,6 @@
 'use client';
 
-type TabId = 'projects' | 'explorer' | 'chat' | 'settings';
+type TabId = 'explorer' | 'chat' | 'settings';
 
 interface SidebarProps {
   activeTab: TabId;
@@ -9,10 +9,9 @@ interface SidebarProps {
 }
 
 const tabs: { id: TabId; label: string; icon: string }[] = [
-  { id: 'projects', label: 'Projects', icon: '🗂️' },
-  { id: 'explorer', label: 'Explorer', icon: '📁' },
-  { id: 'chat', label: 'AI Chat', icon: '🥥' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
+  { id: 'explorer', label: 'Explorer', icon: '[.]' },
+  { id: 'chat', label: 'AI Chat', icon: '<AI>' },
+  { id: 'settings', label: 'Settings', icon: '[=]' },
 ];
 
 export default function Sidebar({ activeTab, onTabChange, children }: SidebarProps) {
@@ -33,7 +32,8 @@ export default function Sidebar({ activeTab, onTabChange, children }: SidebarPro
               width: '36px', height: '36px', borderRadius: '10px', border: 'none',
               background: activeTab === tab.id ? 'var(--accent-soft)' : 'transparent',
               color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-muted)',
-              fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+              fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center',
               justifyContent: 'center', transition: 'all 0.15s',
               position: 'relative',
             }}

@@ -3,10 +3,10 @@
 import { useTheme } from './ThemeProvider';
 
 const themes = [
-  { id: 'beach', label: 'Beach', icon: '🏖️', desc: 'Warm sand & sea breeze', bg: '#fdfaf5', accent: '#14b8a6' },
-  { id: 'dark', label: 'Dark', icon: '🌙', desc: 'Easy on the eyes', bg: '#0c0a09', accent: '#2dd4bf' },
-  { id: 'ocean', label: 'Ocean', icon: '🌊', desc: 'Deep blue waters', bg: '#f0f9ff', accent: '#0284c7' },
-  { id: 'sunset', label: 'Sunset', icon: '🌅', desc: 'Golden hour glow', bg: '#fff7ed', accent: '#f97316' },
+  { id: 'beach', label: 'Beach', icon: '~', desc: 'Warm sand & sea breeze', bg: '#fdfaf5', accent: '#14b8a6' },
+  { id: 'dark', label: 'Dark', icon: '*', desc: 'Easy on the eyes', bg: '#0c0a09', accent: '#2dd4bf' },
+  { id: 'ocean', label: 'Ocean', icon: '~', desc: 'Deep blue waters', bg: '#f0f9ff', accent: '#0284c7' },
+  { id: 'sunset', label: 'Sunset', icon: '~', desc: 'Golden hour glow', bg: '#fff7ed', accent: '#f97316' },
 ];
 
 interface SettingsPanelProps {
@@ -71,7 +71,7 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
         <section style={{ marginBottom: '28px' }}>
           <h3 style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Roblox Account</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '18px' }}>🎮</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>RBX</span>
             <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500 }}>{robloxUsername}</span>
           </div>
         </section>
