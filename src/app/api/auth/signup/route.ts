@@ -6,11 +6,11 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, username, display_name } = await request.json();
 
-    if (!email || !password || !username || !display_name) {
+    if (!email || !password || !username) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const result = await signUpWithEmail(email, password, { username, display_name });
+    const result = await signUpWithEmail(email, password, { username, display_name: display_name || username });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
