@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import EditorPanel from '@/components/EditorPanel';
 import Sidebar from '@/components/Sidebar';
+import WaveBackground from '@/components/WaveBackground';
 import SettingsPanel from '@/components/SettingsPanel';
 import type { AIModel, AIResponse, WorkspaceProject, WorkspaceSession, ScriptFile } from '@/types';
 
@@ -329,143 +330,130 @@ export default function DashboardPage() {
 
   const toastClose = useCallback(() => setToastMsg(''), []);
 
-  // ── Sidebar content generators ─────────────────────────
+  // ── Panel content generators ──────────────────────────
 
-  function renderSidebarContent() {
-    switch (activeTab) {
-      case 'explorer':
-        return (
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between px-3 h-8 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
-              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Explorer</span>
-              {showIde && (
-                <button onClick={goToProjects} className="text-[10px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>Projects</button>
-              )}
+  function renderExplorerPanel() {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between px-3 h-8 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Explorer</span>
+          {showIde && (
+            <button onClick={goToProjects} className="text-[10px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>Projects</button>
+          )}
+        </div>
+
+        {pluginCode.trim().length === 6 && (
+          <div className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="flex items-center justify-between px-3 py-1.5">
+              <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
+              <button onClick={() => refreshExplorerTree()} className="text-[10px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>+</button>
             </div>
-
-            {pluginCode.trim().length === 6 && (
-              <div className="border-b" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="flex items-center justify-between px-3 py-1.5">
-                  <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
-                  <button onClick={() => refreshExplorerTree()} className="text-[10px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>+</button>
-                </div>
-                <div className="px-1 pb-1.5 max-h-[200px] overflow-y-auto">
-                  {explorerTree ? (
-                    <TreeView items={explorerTree} depth={0} />
-                  ) : (
-                    <div className="flex items-center justify-center py-3">
-                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{explorerLoading ? 'Loading...' : 'Connect plugin'}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-              <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{showIde ? 'SCRIPTS' : 'PROJECTS'}</span>
-            </div>
-            <div className="flex-1 overflow-y-auto py-0.5">
-              {projects.length === 0 ? (
-                <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-muted)' }}>No projects yet</p>
+            <div className="px-1 pb-1.5 max-h-[200px] overflow-y-auto">
+              {explorerTree ? (
+                <TreeView items={explorerTree} depth={0} />
               ) : (
-                projects.map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => openProject(project.id)}
-                    className="w-full text-left px-3 py-1 text-xs transition-all border-0 cursor-pointer flex items-center gap-2"
-                    style={{
-                      background: activeProjectId === project.id ? 'var(--accent-soft)' : 'transparent',
-                      color: activeProjectId === project.id ? 'var(--accent)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>L</span>
-                    <span className="truncate">{project.name}</span>
-                  </button>
-                ))
+                <div className="flex items-center justify-center py-3">
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{explorerLoading ? 'Loading...' : 'Connect plugin'}</p>
+                </div>
               )}
             </div>
           </div>
-        );
+        )}
 
-      case 'chat':
-        return (
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between px-3 h-8 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
-              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>AI Chat</span>
-              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[10px] outline-none border px-1.5 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--accent)', borderColor: 'var(--border-color)' }}>
-                {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-
-            <div className="flex-1 overflow-y-auto" style={{ padding: '8px 10px' }}>
-              {chatHistory.length === 0 ? (
-                <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '240px' }}>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate code</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, and more</p>
-                </div>
-              ) : chatHistory.map((msg, i) => (
-                <div key={i}>
-                  {msg.role === 'user' && (
-                    <div className="flex items-start gap-2" style={{ marginBottom: '12px' }}>
-                      <div className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold flex-shrink-0" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>You</p>
-                        <div className="px-2.5 py-1.5 inline-block" style={{ background: 'var(--accent-soft)', borderRadius: '4px', maxWidth: '88%' }}>
-                          <p className="text-xs" style={{ lineHeight: 1.4 }}>{msg.text}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {msg.role === 'assistant' && (
-                    <div className="flex items-start gap-2" style={{ marginBottom: '12px' }}>
-                      <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-[8px] font-bold" style={{ border: '1px solid var(--border-color)', color: 'var(--accent)' }}>AI</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
-                        <div className="px-2.5 py-1.5" style={{ border: '1px solid var(--border-color)', borderRadius: '4px' }}>
-                          <pre className="whitespace-pre-wrap font-sans text-xs" style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}>{msg.text}</pre>
-                          {(msg.text.includes('function') || msg.text.includes('local ')) && (
-                            <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-[10px] text-white font-medium px-2.5 py-1 rounded border-0 cursor-pointer" style={{ background: 'var(--accent)' }}>
-                              Apply
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            <div className="px-3 py-2 border-t flex-shrink-0" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-surface-solid)' }}>
-              {error && <p className="text-xs mb-1" style={{ color: '#ef4444' }}>{error}</p>}
-              <textarea
-                rows={2}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
-                placeholder="Describe what to build..."
-                className="w-full resize-none text-xs px-3 py-2"
-                style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', lineHeight: 1.4, outline: 'none' }}
-              />
-              <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-xs font-medium text-white mt-2 px-4 py-2 border-0 cursor-pointer" style={{ background: 'var(--accent)', borderRadius: '4px', opacity: isGenerating ? 0.6 : 1 }}>
-                {isGenerating ? 'Generating...' : 'Generate'}
+        <div className="px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{showIde ? 'SCRIPTS' : 'PROJECTS'}</span>
+        </div>
+        <div className="flex-1 overflow-y-auto py-0.5">
+          {projects.length === 0 ? (
+            <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-muted)' }}>No projects yet</p>
+          ) : (
+            projects.map((project) => (
+              <button
+                key={project.id}
+                onClick={() => openProject(project.id)}
+                className="w-full text-left px-3 py-1 text-xs transition-all border-0 cursor-pointer flex items-center gap-2"
+                style={{
+                  background: activeProjectId === project.id ? 'var(--accent-soft)' : 'transparent',
+                  color: activeProjectId === project.id ? 'var(--accent)' : 'var(--text-secondary)',
+                }}
+              >
+                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>L</span>
+                <span className="truncate">{project.name}</span>
               </button>
-            </div>
-          </div>
-        );
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
 
-      case 'settings':
-        return (
-          <SettingsPanel
-            userName={userName}
-            userEmail={userEmail}
-            userRole={userRole || 'user'}
-            pluginCode={pluginCode}
-            onPluginCodeChange={setPluginCodeAndPersist}
+  function renderChatPanel() {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between px-3 h-8 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>AI Chat</span>
+          <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[10px] outline-none border px-1.5 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--accent)', borderColor: 'var(--border-color)' }}>
+            {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+        </div>
+
+        <div className="flex-1 overflow-y-auto" style={{ padding: '8px 10px' }}>
+          {chatHistory.length === 0 ? (
+            <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '240px' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate code</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, and more</p>
+            </div>
+              ) : chatHistory.map((msg, i) => (
+            <div key={i} className="animate-slide-up" style={{ animationDelay: '0ms' }}>
+              {msg.role === 'user' && (
+                <div className="flex items-start gap-2" style={{ marginBottom: '12px' }}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold flex-shrink-0" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>You</p>
+                    <div className="px-2.5 py-1.5 inline-block" style={{ background: 'var(--accent-soft)', borderRadius: '4px', maxWidth: '88%' }}>
+                      <p className="text-xs" style={{ lineHeight: 1.4 }}>{msg.text}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {msg.role === 'assistant' && (
+                <div className="flex items-start gap-2" style={{ marginBottom: '12px' }}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-[8px] font-bold" style={{ border: '1px solid var(--border-color)', color: 'var(--accent)' }}>AI</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
+                    <div className="px-2.5 py-1.5" style={{ border: '1px solid var(--border-color)', borderRadius: '4px' }}>
+                      <pre className="whitespace-pre-wrap font-sans text-xs" style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}>{msg.text}</pre>
+                      {(msg.text.includes('function') || msg.text.includes('local ')) && (
+                        <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-[10px] text-white font-medium px-2.5 py-1 rounded border-0 cursor-pointer" style={{ background: 'var(--accent)' }}>
+                          Apply
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="px-3 py-2 border-t flex-shrink-0" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-surface-solid)' }}>
+          {error && <p className="text-xs mb-1" style={{ color: '#ef4444' }}>{error}</p>}
+          <textarea
+            rows={2}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
+            placeholder="Describe what to build..."
+            className="w-full resize-none text-xs px-3 py-2"
+            style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', lineHeight: 1.4, outline: 'none' }}
           />
-        );
-    }
+          <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-xs font-medium text-white mt-2 px-4 py-2 border-0 cursor-pointer" style={{ background: 'var(--accent)', borderRadius: '4px', opacity: isGenerating ? 0.6 : 1 }}>
+            {isGenerating ? 'Generating...' : 'Generate'}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // ── Render ─────────────────────────────────────────────
@@ -473,14 +461,28 @@ export default function DashboardPage() {
     <ErrorBoundary>
       <div className="h-screen flex flex-col" style={{ background: 'var(--bg-page)' }}>
         <div className="flex flex-1 overflow-hidden">
-          <Sidebar activeTab={activeTab} onTabChange={handleTabChange}>
-            {renderSidebarContent()}
-          </Sidebar>
+          {/* Activity Bar */}
+          <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+
+          {/* Left Panel — Explorer or Settings */}
+          <div className="flex flex-col flex-shrink-0 overflow-hidden border-r animate-fade-in" style={{ width: '320px', borderColor: 'var(--border-color)' }}>
+            {activeTab === 'settings' ? (
+              <SettingsPanel
+                userName={userName}
+                userEmail={userEmail}
+                userRole={userRole || 'user'}
+                pluginCode={pluginCode}
+                onPluginCodeChange={setPluginCodeAndPersist}
+              />
+            ) : (
+              renderExplorerPanel()
+            )}
+          </div>
 
           {/* Main Area */}
           <main className="flex-1 flex flex-col overflow-hidden">
             {/* Thin context bar */}
-            <div className="flex items-center gap-3 px-3 h-8 flex-shrink-0 border-b text-xs" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
+            <div className="flex items-center gap-3 px-3 h-8 flex-shrink-0 border-b text-xs animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
               {showIde ? (
                 <>
                   <button onClick={goToProjects} className="border-0 cursor-pointer font-medium px-2 py-0.5 rounded" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
@@ -492,7 +494,7 @@ export default function DashboardPage() {
                   </select>
                   {pluginCode.trim().length === 6 && (
                     <span className="flex items-center gap-1.5" style={{ color: pluginConnected ? 'var(--accent)' : '#fbbf24' }}>
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: pluginConnected ? 'var(--accent)' : '#fbbf24' }} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${pluginConnected ? 'animate-breathe' : ''}`} style={{ background: pluginConnected ? 'var(--accent)' : '#fbbf24' }} />
                       Studio
                     </span>
                   )}
@@ -551,12 +553,12 @@ export default function DashboardPage() {
                       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No projects yet. Create one to get started.</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-2">
                       {projects.map((project) => (
                         <div
                           key={project.id}
                           onClick={() => openProject(project.id)}
-                          className="border cursor-pointer transition-all hover:opacity-90 p-4"
+                          className="border cursor-pointer animate-slide-up p-4 animate-scale-hover"
                           style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px' }}
                         >
                           <div className="flex items-center gap-3 mb-2">
@@ -579,10 +581,17 @@ export default function DashboardPage() {
               </div>
             )}
           </main>
+
+          {/* Right Panel — Chat */}
+          <div className="flex flex-col flex-shrink-0 overflow-hidden border-l animate-slide-in-left" style={{ width: '320px', borderColor: 'var(--border-color)' }}>
+            {renderChatPanel()}
+          </div>
         </div>
 
+        <WaveBackground />
+
         {/* Status Bar */}
-        <footer className="flex items-center justify-between px-3 h-6 border-t text-[11px] flex-shrink-0" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+        <footer className="flex items-center justify-between px-3 h-6 border-t text-[11px] flex-shrink-0 relative z-10 animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
           <div className="flex items-center gap-3">
             <span className="cursor-pointer" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('explorer')}>[.] Explorer</span>
             <span className="cursor-pointer" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('chat')}>&lt;AI&gt; AI Chat</span>

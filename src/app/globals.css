@@ -214,7 +214,20 @@ body { overflow: hidden; }
   background: var(--bg-editor);
 }
 
-/* ── Animations ──────────────────────────────────── */
+/* Animated gradient for hero text */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200% !important;
+  animation: gradientShift 4s ease infinite;
+}
+
+/* ── Core Animations ─────────────────────────────────── */
+
+/* Float up (for toasts) */
 @keyframes float-up {
   from { opacity: 0; transform: translate(-50%, 12px); }
   to { opacity: 1; transform: translate(-50%, 0); }
@@ -222,3 +235,133 @@ body { overflow: hidden; }
 .animate-float-up {
   animation: float-up 0.25s ease-out;
 }
+
+/* Fade in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.35s ease-out forwards;
+}
+
+/* Slide up with fade */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
+/* Pulse glow for active/status indicators */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--accent); }
+  50% { opacity: 0.6; box-shadow: 0 0 14px var(--accent), 0 0 28px var(--accent); }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+/* Subtle breathe for status dots */
+@keyframes breathe {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.animate-breathe {
+  animation: breathe 2s ease-in-out infinite;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Scale hover */
+.animate-scale-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.animate-scale-hover:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.animate-scale-hover:active {
+  transform: scale(0.98);
+}
+
+/* Staggered delay children (apply to container) */
+.stagger-1 > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-1 > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-1 > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-1 > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-1 > *:nth-child(5) { animation-delay: 240ms; }
+
+/* Staggered animation for project grid */
+.stagger-2 > *:nth-child(1) { animation-delay: 40ms; }
+.stagger-2 > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-2 > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-2 > *:nth-child(4) { animation-delay: 160ms; }
+.stagger-2 > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-2 > *:nth-child(6) { animation-delay: 240ms; }
+
+/* ── Animated Wave Background ──────────────────────────── */
+
+@keyframes wave1 {
+  0% { transform: translateX(0) translateZ(0); }
+  100% { transform: translateX(-33.33%) translateZ(0); }
+}
+@keyframes wave2 {
+  0% { transform: translateX(0) translateZ(0); }
+  100% { transform: translateX(-50%) translateZ(0); }
+}
+@keyframes wave3 {
+  0% { transform: translateX(0) translateZ(0); }
+  100% { transform: translateX(-66.66%) translateZ(0); }
+}
+
+.wave-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wave-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 300%;
+  height: 100%;
+}
+
+.wave-svg-1 { animation: wave1 12s linear infinite; }
+.wave-svg-2 { animation: wave2 18s linear infinite; opacity: 0.5; }
+.wave-svg-3 { animation: wave3 24s linear infinite; opacity: 0.25; }

@@ -39,9 +39,9 @@ export default function EditorPanel({ code, onChange, activeFile }: EditorPanelP
   }, [code]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden animate-fade-in">
       <div className="flex items-center px-6 h-11 border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>📄 {activeFile?.name || 'untitled.lua'}</span>
+        <span className="text-xs font-semibold animate-slide-in-right" style={{ color: 'var(--accent)' }}>📄 {activeFile?.name || 'untitled.lua'}</span>
       </div>
       <div className="flex-1 flex overflow-hidden" style={{ minHeight: 0 }}>
         <div className="select-none text-right py-5 px-4 leading-[22px] border-r overflow-hidden font-mono flex-shrink-0" style={{ color: 'var(--line-numbers)', borderColor: 'var(--border-color)', background: 'var(--bg-surface)', fontSize: 13, width: '52px' }}>

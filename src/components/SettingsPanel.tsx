@@ -21,21 +21,22 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ padding: '20px 16px' }}>
-      <h2 className="label" style={{ marginBottom: '20px' }}>Settings</h2>
+    <div className="flex-1 overflow-y-auto animate-fade-in" style={{ padding: '20px 16px' }}>
+      <h2 className="label animate-slide-up" style={{ marginBottom: '20px' }}>Settings</h2>
 
-      <section style={{ marginBottom: '28px' }}>
+      <section className="animate-slide-up" style={{ marginBottom: '28px', animationDelay: '60ms' }}>
         <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Appearance</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="stagger-1" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {themes.map((t) => (
             <button
               key={t.id}
               onClick={() => setTheme(t.id as any)}
+              className="animate-slide-up animate-scale-hover"
               style={{
                 display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px',
                 borderRadius: '10px', border: theme === t.id ? '2px solid var(--accent)' : '1px solid var(--border-color)',
                 background: theme === t.id ? 'var(--accent-soft)' : 'transparent',
-                cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.15s',
+                cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease',
               }}
             >
               <span className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: t.accent }} />
@@ -51,7 +52,7 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
         </div>
       </section>
 
-      <section style={{ marginBottom: '28px' }}>
+      <section className="animate-slide-up" style={{ marginBottom: '28px', animationDelay: '120ms' }}>
         <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Account</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Username</div>
@@ -64,7 +65,7 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
       </section>
 
       {robloxUsername && (
-        <section style={{ marginBottom: '28px' }}>
+        <section className="animate-slide-up" style={{ marginBottom: '28px', animationDelay: '180ms' }}>
           <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Roblox Account</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>RBX</span>
@@ -73,7 +74,7 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
         </section>
       )}
 
-      <section>
+      <section className="animate-slide-up" style={{ animationDelay: '240ms' }}>
         <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Studio Plugin Sync</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Plugin connection code (6 characters)</div>
