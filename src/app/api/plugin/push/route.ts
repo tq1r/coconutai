@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import { findPluginSession, upsertPluginSession, generateId, now } from '@/lib/db';
 
 export async function POST(request: Request) {
-  const { code, script } = await request.json();
+  const body = await request.json();
+  const { code, script, type } = body;
+
   if (!code || code.length !== 6) {
     return NextResponse.json({ success: false, error: 'Invalid session code' }, { status: 400 });
-  }
-  if (!script || typeof script !== 'string') {
-    return NextResponse.json({ success: false, error: 'Missing script content' }, { status: 400 });
   }
 
   const session = await findPluginSession(code);
@@ -21,21 +20,22 @@ export async function POST(request: Request) {
 
   const command = {
     id: generateId(),
-    code: script,
+    type: type || 'script',
+    code: script || '',
     executed: false,
     created_at: now(),
+    ...session,
+    commands: [...(session.commands || []), { id: generateId(), type: type || 'script', code: script || '', executed: false, created_at: now() }],
   };
 
   await upsertPluginSession(code, {
     ...session,
-    commands: [...(session.commands || []), command],
-    last_push_at: now(),
+    commands: command.commands,
   });
 
   return NextResponse.json({
     success: true,
     commandId: command.id,
-    pushedAt: command.created_at,
     pendingAhead: (session.commands || []).filter((c: any) => !c.executed).length,
   });
 }

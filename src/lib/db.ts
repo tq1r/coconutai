@@ -159,3 +159,18 @@ export async function upsertPluginSession(code: string, session: any) {
   db.plugin_sessions[code] = session;
   await persist(db);
 }
+
+export async function getPluginExplorerTree(code: string) {
+  const db = await getDb();
+  const session = db.plugin_sessions[code];
+  return session?.explorer_tree || null;
+}
+
+export async function setPluginExplorerTree(code: string, tree: any) {
+  const db = await getDb();
+  if (db.plugin_sessions[code]) {
+    db.plugin_sessions[code].explorer_tree = tree;
+    db.plugin_sessions[code].explorer_tree_updated_at = now();
+    await persist(db);
+  }
+}

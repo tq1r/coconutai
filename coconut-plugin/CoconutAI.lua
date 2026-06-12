@@ -387,6 +387,46 @@ local function stopPolling()
 	setStatus("Ready", C.textSec, C.textMuted)
 end
 
+-- ── Explorer Tree ───────────────────────────────────────
+local function getExplorerTree()
+	local function buildTree(instance, depth)
+		depth = depth or 0
+		if depth > 20 then return nil end
+		local children = instance:GetChildren()
+		local items = {}
+		for _, child in ipairs(children) do
+			local className = child.ClassName
+			local name = child.Name
+			local item = { name = name, className = className, children = {} }
+			local sub = buildTree(child, depth + 1)
+			if sub then item.children = sub end
+			table.insert(items, item)
+		end
+		return items
+	end
+
+	local rootServices = {
+		game:GetService("Workspace"),
+		game:GetService("Players"),
+		game:GetService("Lighting"),
+		game:GetService("ReplicatedStorage"),
+		game:GetService("ServerStorage"),
+		game:GetService("ServerScriptService"),
+		game:GetService("StarterGui"),
+		game:GetService("StarterPack"),
+		game:GetService("SoundService"),
+	}
+	local tree = {}
+	for _, svc in ipairs(rootServices) do
+		table.insert(tree, {
+			name = svc.Name,
+			className = svc.ClassName,
+			children = buildTree(svc) or {},
+		})
+	end
+	return tree
+end
+
 local function poll()
 	while state.isPolling do
 		task.wait(POLL_INTERVAL)
@@ -401,16 +441,31 @@ local function poll()
 		if ok and result and result.success then
 			if result.commands and #result.commands > 0 then
 				for _, cmd in ipairs(result.commands) do
-					addLog("▶ Received script from web app", C.warning, false, true)
-					local s, err = pcall(function()
-						local fn, e = loadstring(cmd)
-						if not fn then error(e) end
-						return fn()
-					end)
-					if s then
-						addLog("✓ Script executed successfully", C.success, true, true)
+					if cmd.type == "report_explorer" then
+						addLog("▶ Reporting explorer tree", C.warning, false, true)
+						local s, err = pcall(function()
+							local http = game:GetService("HttpService")
+							local tree = getExplorerTree()
+							local json = http:JSONEncode(tree)
+							http:PostAsync(API_BASE .. "/explorer", json, Enum.HttpContentType.ApplicationJson)
+						end)
+						if s then
+							addLog("✓ Explorer tree sent", C.success, true, true)
+						else
+							addLog("✗ Failed to report explorer: " .. tostring(err), C.error, false, true)
+						end
 					else
-						addLog("✗ Script error: " .. tostring(err), C.error, false, true)
+						addLog("▶ Received script from web app", C.warning, false, true)
+						local s, err = pcall(function()
+							local fn, e = loadstring(cmd.code or cmd)
+							if not fn then error(e) end
+							return fn()
+						end)
+						if s then
+							addLog("✓ Script executed successfully", C.success, true, true)
+						else
+							addLog("✗ Script error: " .. tostring(err), C.error, false, true)
+						end
 					end
 				end
 			end

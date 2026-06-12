@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    commands: pending.map((c: any) => c.code),
+    commands: pending.map((c: any) => ({ type: c.type || 'script', code: c.code })),
     pendingCount: pending.length,
   });
 }

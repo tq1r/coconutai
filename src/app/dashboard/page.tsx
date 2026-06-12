@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import EditorPanel from '@/components/EditorPanel';
 import Sidebar from '@/components/Sidebar';
@@ -25,6 +25,38 @@ return module
 
 type TabId = 'projects' | 'explorer' | 'chat' | 'settings';
 
+interface TreeNode { name: string; className: string; children?: TreeNode[] }
+
+function TreeView({ items, depth = 0 }: { items: TreeNode[]; depth?: number }) {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set(items.length < 20 ? items.map((_, i) => i) : []));
+  const toggle = (i: number) => setExpanded((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; });
+  return (
+    <div className="select-none">
+      {items.map((item, i) => {
+        const hasChildren = item.children && item.children.length > 0;
+        const isExpanded = expanded.has(i);
+        return (
+          <div key={`${item.name}-${i}`}>
+            <div className="flex items-center gap-1 py-0.5 cursor-pointer rounded hover:opacity-80" style={{ paddingLeft: `${depth * 14 + 6}px` }} onClick={() => hasChildren && toggle(i)}>
+              <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)', width: 12, textAlign: 'center' }}>
+                {hasChildren ? (isExpanded ? '▾' : '▸') : ' '}
+              </span>
+              <span className={`text-[10px] flex-shrink-0 ${item.className === 'Folder' || item.className === 'Model' ? 'opacity-70' : ''}`}>
+                {item.className === 'Script' || item.className === 'LocalScript' || item.className === 'ModuleScript' ? '📜' : '📦'}
+              </span>
+              <span className="text-[11px] truncate" style={{ color: 'var(--text-secondary)', fontWeight: item.className === 'Workspace' || item.className === 'Players' ? 600 : 400 }}>{item.name}</span>
+              <span className="text-[9px] ml-1" style={{ color: 'var(--text-muted)' }}>{item.className}</span>
+            </div>
+            {hasChildren && isExpanded && item.children && (
+              <TreeView items={item.children} depth={depth + 1} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [userName, setUserName] = useState('Creator');
   const [userEmail, setUserEmail] = useState('');
@@ -47,6 +79,8 @@ export default function DashboardPage() {
   const [newFileName, setNewFileName] = useState('');
   const [robloxLinked, setRobloxLinked] = useState(false);
   const [robloxUsername, setRobloxUsername] = useState('');
+  const [explorerTree, setExplorerTree] = useState<any[] | null>(null);
+  const [explorerLoading, setExplorerLoading] = useState(false);
   const [pluginCode, setPluginCode] = useState('');
   const [pluginConnected, setPluginConnected] = useState(false);
   const [pluginStatus, setPluginStatus] = useState('');
@@ -79,6 +113,7 @@ export default function DashboardPage() {
         const res = await fetch(`/api/plugin/verify?code=${upper}`);
         const data = await res.json();
         setPluginConnected(data?.connected === true);
+        fetchExplorerTree();
       } catch { setPluginConnected(false); }
     }
   }
@@ -179,7 +214,7 @@ export default function DashboardPage() {
       const newFile: ScriptFile = { id: projectId, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId, updatedAt: new Date().toISOString() };
       setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
     }
-    setActiveTab('explorer');
+    handleTabChange('explorer');
   }
 
   async function createProject(name: string) {
@@ -199,6 +234,38 @@ export default function DashboardPage() {
       }
     } catch { /* ignore */ }
   }
+
+  async function fetchExplorerTree() {
+    const code = pluginCodeRef.current;
+    if (code.length !== 6) return;
+    setExplorerLoading(true);
+    try {
+      const res = await fetch(`/api/plugin/explorer?code=${code}`);
+      const data = await res.json();
+      if (data?.success && data?.tree) setExplorerTree(data.tree);
+    } catch { /* ignore */ }
+    setExplorerLoading(false);
+  }
+
+  async function refreshExplorerTree() {
+    const code = pluginCodeRef.current;
+    if (code.length !== 6) return;
+    setExplorerTree(null);
+    try {
+      await fetch('/api/plugin/push', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, type: 'report_explorer', script: '' }),
+      });
+    } catch { /* ignore */ }
+    setTimeout(fetchExplorerTree, 3000);
+  }
+
+  const handleTabChange = useCallback((tab: TabId) => {
+    setActiveTab(tab);
+    if (tab === 'explorer' && pluginCodeRef.current.length === 6) {
+      fetchExplorerTree();
+    }
+  }, []);
 
   function handleCodeChange(value: string) {
     setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: value, updatedAt: new Date().toISOString() } : f));
@@ -222,7 +289,7 @@ export default function DashboardPage() {
         try {
           const pushRes = await fetch('/api/plugin/push', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: activeCode, script: aiResponse.output }),
+            body: JSON.stringify({ code: activeCode, type: 'script', script: aiResponse.output }),
           });
           const pushData = await pushRes.json();
           setPluginStatus(pushData.success ? 'Pushed to Studio' : 'Push failed');
@@ -293,13 +360,13 @@ export default function DashboardPage() {
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar with Activity Bar */}
           <div className="flex-shrink-0" style={{ borderRight: '1px solid var(--border-color)' }}>
-            <Sidebar activeTab={activeTab} onTabChange={setActiveTab}>
+            <Sidebar activeTab={activeTab} onTabChange={handleTabChange}>
               {/* Projects Panel */}
               {activeTab === 'projects' && (
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between px-4 h-11 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
                     <span className="label" style={{ fontSize: 10 }}>Projects</span>
-                    <button onClick={() => { setShowNewFileInput(true); setActiveTab('explorer'); }} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
+                    <button onClick={() => { setShowNewFileInput(true); handleTabChange('explorer'); }} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
                     {projects.length === 0 ? (
@@ -307,7 +374,7 @@ export default function DashboardPage() {
                         <p className="text-3xl mb-3">🗂️</p>
                         <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>No projects yet</p>
                         <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>Create your first project<br />to start building in Roblox Studio</p>
-                        <button onClick={() => { setShowNewFileInput(true); setActiveTab('explorer'); }} className="mt-4 text-xs font-semibold text-white px-4 py-2 rounded-lg border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>New Project</button>
+                        <button onClick={() => { setShowNewFileInput(true); handleTabChange('explorer'); }} className="mt-4 text-xs font-semibold text-white px-4 py-2 rounded-lg border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>New Project</button>
                       </div>
                     ) : projects.map((project) => (
                       <div key={project.id} className="rounded-xl border p-3.5 cursor-pointer transition-all hover:opacity-90" style={{ background: 'var(--bg-elevated)', borderColor: activeProjectId === project.id ? 'var(--accent)' : 'var(--border-color)' }} onClick={() => openProject(project.id)}>
@@ -336,20 +403,48 @@ export default function DashboardPage() {
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between px-4 h-11 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
                     <span className="label" style={{ fontSize: 10 }}>Explorer</span>
-                    <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
+                    <div className="flex items-center gap-1.5">
+                      {pluginCode.trim().length === 6 && (
+                        <button onClick={() => { refreshExplorerTree(); fetchExplorerTree(); }} className="px-2 py-1 text-[10px] font-semibold rounded-lg border-0 cursor-pointer transition-all" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                          {explorerLoading ? '⟳' : '🔄'}
+                        </button>
+                      )}
+                      <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
+                    </div>
                   </div>
-                  {showNewFileInput && (
-                    <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                      <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-full text-xs outline-none" style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px' }} autoFocus />
+
+                  {/* Studio Instance Tree */}
+                  {pluginCode.trim().length === 6 && (
+                    <div className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                      <div className="flex items-center justify-between px-3 py-1.5">
+                        <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
+                      </div>
+                      <div className="px-1 pb-1.5 max-h-[260px] overflow-y-auto">
+                        {explorerTree ? (
+                          <TreeView items={explorerTree} depth={0} />
+                        ) : (
+                          <div className="flex items-center justify-center py-4">
+                            <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{explorerLoading ? 'Loading...' : 'Click ↻ to fetch'}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                  <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+
+                  {/* Local Scripts */}
+                  <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>SCRIPTS</span>
+                    {showNewFileInput && (
+                      <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-24 text-[10px] outline-none" style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px 8px' }} autoFocus />
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-y-auto py-1 px-1 space-y-0.5">
                     {projects.map((project) => (
-                      <button key={project.id} onClick={() => openProject(project.id)} className="w-full text-left px-3 py-2 text-xs rounded-lg transition-all truncate border cursor-pointer" style={activeProjectId === project.id ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--border-color)', fontWeight: 500 } : { background: 'transparent', color: 'var(--text-secondary)', borderColor: 'transparent' }}>
+                      <button key={project.id} onClick={() => openProject(project.id)} className="w-full text-left px-3 py-1.5 text-xs rounded-lg transition-all truncate border cursor-pointer" style={activeProjectId === project.id ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--border-color)', fontWeight: 500 } : { background: 'transparent', color: 'var(--text-secondary)', borderColor: 'transparent' }}>
                         📄 {project.name}.lua
                       </button>
                     ))}
-                    {projects.length === 0 && <p className="text-xs text-center mt-8 px-2" style={{ color: 'var(--text-muted)' }}>No files<br />Click + to create</p>}
+                    {projects.length === 0 && <p className="text-[10px] text-center mt-6 px-2" style={{ color: 'var(--text-muted)' }}>No scripts yet</p>}
                   </div>
                 </div>
               )}
@@ -448,10 +543,10 @@ export default function DashboardPage() {
         {/* ── Status Bar ─────────────────────────────────── */}
         <footer className="flex items-center justify-between px-5 h-7 border-t text-[10px] flex-shrink-0" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
           <div className="flex items-center gap-4">
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'projects' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('projects')}>🗂️ Projects</span>
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('explorer')}>📁 Explorer</span>
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('chat')}>🥥 AI Chat</span>
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('settings')}>⚙️ Settings</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'projects' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('projects')}>🗂️ Projects</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('explorer')}>📁 Explorer</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('chat')}>🥥 AI Chat</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('settings')}>⚙️ Settings</span>
           </div>
           <div className="flex items-center gap-4">
             <span>Ln 1</span>
