@@ -18,84 +18,72 @@
 /* All themes are dark mode — professional IDE feel */
 
 :root, [data-theme="coconut"] {
-  --bg-page: #0a0a0f;
-  --bg-gradient: linear-gradient(135deg, #0a0a0f 0%, #0e0e16 50%, #0a0a0f 100%);
-  --bg-surface: rgba(20, 20, 30, 0.85);
-  --bg-surface-solid: #14141e;
-  --bg-elevated: rgba(28, 28, 42, 0.9);
-  --bg-editor: rgba(14, 14, 22, 0.95);
-  --bg-code: #16161f;
-  --bg-input: #1a1a26;
-  --border-color: rgba(60, 60, 80, 0.5);
-  --border-strong: #3c3c50;
-  --text-primary: #e8e8ed;
-  --text-secondary: #9a9ab0;
-  --text-muted: #6a6a80;
-  --text-inverse: #0a0a0f;
+  --bg-page: #0a0a0a;
+  --bg-surface: rgba(18, 18, 18, 0.85);
+  --bg-surface-solid: #121212;
+  --bg-elevated: rgba(24, 24, 24, 0.9);
+  --bg-editor: rgba(12, 12, 12, 0.95);
+  --bg-code: #0e0e0e;
+  --bg-input: #181818;
+  --border-color: rgba(48, 48, 48, 0.6);
+  --border-strong: #303030;
+  --text-primary: #e0e0e0;
+  --text-secondary: #888888;
+  --text-muted: #585858;
+  --text-inverse: #0a0a0a;
   --accent: #d97706;
   --accent-hover: #f59e0b;
-  --accent-soft: rgba(217, 119, 6, 0.12);
-  --danger: #f87171;
+  --accent-soft: rgba(217, 119, 6, 0.1);
+  --danger: #ef4444;
   --warning: #fbbf24;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
-  --code-bg: #16161f;
-  --line-numbers: #3c3c50;
+  --code-bg: #0e0e0e;
+  --line-numbers: #383838;
 }
 
 [data-theme="midnight"] {
-  --bg-page: #070712;
-  --bg-gradient: linear-gradient(135deg, #070712 0%, #0b0b1a 50%, #070712 100%);
-  --bg-surface: rgba(17, 17, 34, 0.85);
-  --bg-surface-solid: #111122;
-  --bg-elevated: rgba(26, 26, 48, 0.9);
-  --bg-editor: rgba(11, 11, 24, 0.95);
-  --bg-code: #141428;
-  --bg-input: #181830;
-  --border-color: rgba(40, 40, 70, 0.5);
-  --border-strong: #404070;
-  --text-primary: #e4e4f0;
-  --text-secondary: #9494b8;
-  --text-muted: #646488;
-  --text-inverse: #070712;
+  --bg-page: #08080e;
+  --bg-surface: rgba(14, 14, 24, 0.85);
+  --bg-surface-solid: #0e0e18;
+  --bg-elevated: rgba(20, 20, 34, 0.9);
+  --bg-editor: rgba(10, 10, 18, 0.95);
+  --bg-code: #0c0c16;
+  --bg-input: #141420;
+  --border-color: rgba(40, 40, 60, 0.6);
+  --border-strong: #303050;
+  --text-primary: #dcdce8;
+  --text-secondary: #8484a0;
+  --text-muted: #545470;
+  --text-inverse: #08080e;
   --accent: #3b82f6;
   --accent-hover: #60a5fa;
-  --accent-soft: rgba(59, 130, 246, 0.12);
-  --danger: #f87171;
+  --accent-soft: rgba(59, 130, 246, 0.1);
+  --danger: #ef4444;
   --warning: #fbbf24;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
-  --code-bg: #141428;
-  --line-numbers: #404070;
+  --code-bg: #0c0c16;
+  --line-numbers: #303050;
 }
 
 [data-theme="obsidian"] {
-  --bg-page: #050508;
-  --bg-gradient: linear-gradient(135deg, #050508 0%, #0a0a10 50%, #050508 100%);
-  --bg-surface: rgba(14, 14, 20, 0.85);
-  --bg-surface-solid: #0e0e14;
-  --bg-elevated: rgba(22, 22, 30, 0.9);
-  --bg-editor: rgba(8, 8, 12, 0.95);
-  --bg-code: #12121a;
-  --bg-input: #16161e;
-  --border-color: rgba(40, 40, 55, 0.5);
-  --border-strong: #404055;
-  --text-primary: #e0e0ea;
-  --text-secondary: #9090a5;
-  --text-muted: #606075;
-  --text-inverse: #050508;
+  --bg-page: #05050a;
+  --bg-surface: rgba(10, 10, 16, 0.85);
+  --bg-surface-solid: #0a0a10;
+  --bg-elevated: rgba(16, 16, 24, 0.9);
+  --bg-editor: rgba(6, 6, 12, 0.95);
+  --bg-code: #08080e;
+  --bg-input: #101018;
+  --border-color: rgba(35, 35, 50, 0.6);
+  --border-strong: #282840;
+  --text-primary: #d8d8e4;
+  --text-secondary: #808098;
+  --text-muted: #505068;
+  --text-inverse: #05050a;
   --accent: #a855f7;
   --accent-hover: #c084fc;
-  --accent-soft: rgba(168, 85, 247, 0.12);
-  --danger: #f87171;
+  --accent-soft: rgba(168, 85, 247, 0.1);
+  --danger: #ef4444;
   --warning: #fbbf24;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
-  --code-bg: #12121a;
-  --line-numbers: #404055;
+  --code-bg: #08080e;
+  --line-numbers: #282840;
 }
 
 /* ── Typography scale ─────────────────────────────────── */
@@ -124,22 +112,21 @@ body { overflow: hidden; }
 .panel {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  backdrop-filter: blur(8px);
+  border-radius: 4px;
 }
 
 .panel-solid {
   background: var(--bg-surface-solid);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 4px;
 }
 
 .input-base {
   background: var(--bg-input);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  border-radius: 12px;
-  padding: 10px 14px;
+  border-radius: 4px;
+  padding: 8px 12px;
   font-size: 14px;
   outline: none;
   transition: border-color 0.15s;
