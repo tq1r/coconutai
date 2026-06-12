@@ -479,50 +479,75 @@ export default function DashboardPage() {
 
           {/* Main Area */}
           <main className="flex-1 flex flex-col overflow-hidden">
+            {/* Thin context bar */}
+            <div className="flex items-center gap-3 px-3 h-8 flex-shrink-0 border-b text-xs" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
+              {showIde ? (
+                <>
+                  <button onClick={goToProjects} className="border-0 cursor-pointer font-medium px-2 py-0.5 rounded" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
+                  <span style={{ color: 'var(--border-strong)' }}>/</span>
+                  <span className="font-medium truncate" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
+                  <div className="flex-1" />
+                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[10px] outline-none border px-1.5 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '140px' }}>
+                    {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
+                  </select>
+                  {pluginCode.trim().length === 6 && (
+                    <span className="flex items-center gap-1.5" style={{ color: pluginConnected ? 'var(--accent)' : '#fbbf24' }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: pluginConnected ? 'var(--accent)' : '#fbbf24' }} />
+                      Studio
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Coconut AI</span>
+                  <div className="flex-1" />
+                  <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-[10px] outline-none border px-1.5 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border-color)', maxWidth: '140px' }}>
+                    {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
+                  </select>
+                </>
+              )}
+            </div>
+
             {!showIde ? (
               /* ── Welcome Page ─────────────────────────── */
-              <div className="flex-1 overflow-y-auto" style={{ padding: '48px' }}>
+              <div className="flex-1 overflow-y-auto" style={{ padding: '40px 48px' }}>
                 <div className="max-w-3xl mx-auto">
-                  <div className="mb-10">
-                    <h1 className="text-lg font-semibold" style={{ color: 'var(--accent)' }}>Coconut AI</h1>
-                    <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Roblox script IDE with AI assistance</p>
-                  </div>
-
-                  <div className="mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Projects</h2>
-                      <button
-                        onClick={() => setShowNewFileInput(!showNewFileInput)}
-                        className="text-xs font-medium px-3 py-1.5 border-0 cursor-pointer"
-                        style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}
-                      >+ New</button>
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Projects</h1>
+                      <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Select a project to open the workspace</p>
                     </div>
-
-                    {showNewFileInput && (
-                      <div className="mb-5 p-3 border" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
-                        <input
-                          value={newFileName}
-                          onChange={(e) => setNewFileName(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && !creating && createProject(newFileName)}
-                          placeholder="Project name..."
-                          className="w-full outline-none px-3 py-2 text-sm"
-                          style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
-                          autoFocus
-                        />
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => createProject(newFileName)} disabled={creating} className="px-3 py-1.5 text-xs font-medium border-0 cursor-pointer" style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px', opacity: creating ? 0.6 : 1 }}>
-                            {creating ? 'Creating...' : 'Create'}
-                          </button>
-                          <button onClick={() => { setShowNewFileInput(false); setNewFileName(''); }} className="px-3 py-1.5 text-xs font-medium border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', borderRadius: '4px', background: 'transparent' }}>
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => setShowNewFileInput(!showNewFileInput)}
+                      className="text-xs font-medium px-3.5 py-2 border-0 cursor-pointer"
+                      style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}
+                    >+ New</button>
                   </div>
+
+                  {showNewFileInput && (
+                    <div className="mb-6 p-4 border" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
+                      <input
+                        value={newFileName}
+                        onChange={(e) => setNewFileName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !creating && createProject(newFileName)}
+                        placeholder="Project name..."
+                        className="w-full outline-none px-3 py-2 text-sm"
+                        style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={() => createProject(newFileName)} disabled={creating} className="px-4 py-2 text-xs font-medium border-0 cursor-pointer" style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px', opacity: creating ? 0.6 : 1 }}>
+                          {creating ? 'Creating...' : 'Create'}
+                        </button>
+                        <button onClick={() => { setShowNewFileInput(false); setNewFileName(''); }} className="px-4 py-2 text-xs font-medium border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', borderRadius: '4px', background: 'transparent' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {projects.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20">
+                    <div className="flex flex-col items-center justify-center py-24">
                       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No projects yet. Create one to get started.</p>
                     </div>
                   ) : (
@@ -548,10 +573,6 @@ export default function DashboardPage() {
             ) : (
               /* ── Code Editor ──────────────────────────── */
               <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '8px 10px 8px 8px' }}>
-                <div className="flex items-center gap-2 px-3 py-1.5 border-b text-xs" style={{ borderColor: 'var(--border-color)' }}>
-                  <span className="text-[11px]" style={{ color: 'var(--accent)' }}>L</span>
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
-                </div>
                 <div className="flex-1 flex flex-col overflow-hidden border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
                   <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
                 </div>
