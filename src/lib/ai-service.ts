@@ -32,6 +32,7 @@ const GITHUB_COMPATIBLE: Record<string, string> = {
   'gpt-4': 'gpt-4',
   'mistral': 'Mistral-large',
   'gemini-flash': 'gpt-4o-mini',
+  'llama-3.1-405b': 'Llama-3.1-405B-Instruct',
 };
 
 async function requestAI(prompt: string, model: AIModel, sessionCode?: string): Promise<AIResponse> {
