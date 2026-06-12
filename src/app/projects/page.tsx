@@ -77,7 +77,7 @@ export default function ProjectsPage() {
       }
       setShowNewInput(false);
       setNewName('');
-      await fetchProjects(workspaceName);
+      setProjects((prev) => [...prev, payload.data]);
       toast('Project created', 'success');
     } catch {
       toast('Unable to create project', 'error');

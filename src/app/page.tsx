@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const features = [
@@ -12,6 +13,15 @@ const features = [
 ];
 
 export default function HomePage() {
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => { if (data?.success) setSignedIn(true); })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-gradient)' }}>
       {/* ── Nav ──────────────────────────────────────────── */}
@@ -22,10 +32,18 @@ export default function HomePage() {
             <span className="text-lg font-bold" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="text-sm font-medium no-underline" style={{ color: 'var(--text-secondary)' }}>Sign In</Link>
-            <Link href="/auth/signup" className="btn-primary no-underline text-sm" style={{ padding: '8px 18px' }}>
-              Get Started
-            </Link>
+            {signedIn ? (
+              <Link href="/projects" className="btn-primary no-underline text-sm" style={{ padding: '8px 18px' }}>
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth/login" className="text-sm font-medium no-underline" style={{ color: 'var(--text-secondary)' }}>Sign In</Link>
+                <Link href="/auth/signup" className="btn-primary no-underline text-sm" style={{ padding: '8px 18px' }}>
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
