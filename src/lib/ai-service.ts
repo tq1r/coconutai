@@ -3,7 +3,21 @@ import { aiModels, getModelById } from './ai-models';
 import { insertUsage, generateId, now } from './db';
 import type { AIResponse, AIModel } from '@/types';
 
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+const GITHUB_ENDPOINT = 'https://models.inference.ai.azure.com/chat/completions';
+const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+
+function hasAnyKey(): boolean {
+  return !!(GITHUB_TOKEN || OPENROUTER_API_KEY);
+}
+
+function getProvider(): 'github' | 'openrouter' | null {
+  if (GITHUB_TOKEN) return 'github';
+  if (OPENROUTER_API_KEY) return 'openrouter';
+  return null;
+}
 
 function detectIntent(prompt: string): 'chat' | 'code' {
   const p = prompt.toLowerCase().trim();
@@ -13,15 +27,7 @@ function detectIntent(prompt: string): 'chat' | 'code' {
   if (p.includes('thanks') || p.includes('thank you') || p.includes('ty') || p.includes('appreciate')) return 'chat';
   if (/^(ok|okay|kk|alright|sure|yes|no|yeah|nah|nope|yep)\s*$/.test(p)) return 'chat';
   if (/^(yo|lol|lmao|lmfao|nice|cool|awesome|sick|dope|bet|facts)\s*$/.test(p)) return 'chat';
-
-  const hasCodeKeywords = /combat|fight|damage|sword|weapon|attack|enemy|health|gui|ui|screen|button|frame|menu|hud|move|walk|run|speed|dash|jump|sprint|leaderboard|currency|shop|money|coins|score|economy|tower|defense|game|script|code|function|local|module|loop|spawn|wave|enemy|projectile|bullet|gun|system/i.test(p);
-  const isShortChat = p.split(/\s+/).length <= 4 && !hasCodeKeywords;
-
-  if (isShortChat) return 'chat';
-  if (hasCodeKeywords) return 'code';
-
   if (p.length < 15) return 'chat';
-
   return 'code';
 }
 
@@ -47,49 +53,110 @@ function chatResponse(prompt: string): string {
   return "I build Roblox games — all of it. Try:\n- \"Tower defense with 5 enemy types and wave system\"\n- \"Racing game with vehicle physics and drift\"\n- \"Building system with grid placement and snapping\"\n- \"NPC with patrol, chase, and dialogue\"\n- \"Full obby with checkpoints, leaderboard, timer\"";
 }
 
-async function requestOpenRouter(prompt: string, model: AIModel): Promise<AIResponse> {
-  if (!OPENROUTER_API_KEY) {
-    throw new Error('OpenRouter API key not configured. Set OPENROUTER_API_KEY in your environment variables.');
+const CODE_SYSTEM_PROMPT = `You are a world-class Roblox developer who has built and shipped top-earning games. You are a master of every domain: combat, UI, animations, building systems, NPCs, physics, audio, VFX, monetization, data persistence, vehicle physics, procedural generation, and more. You do not produce "AI slop" — every line of code you write is production-quality, optimized, and follows Roblox best practices.
+
+Rules:
+- Use game:GetService("ServiceName") pattern
+- Use lowercase 2-space indentation
+- Prefer Enum values over raw numbers
+- Modules use the local Module = {}; return Module pattern
+- Return ONLY raw Luau code. No markdown, no backticks, no explanation.
+- The code must work when pasted directly into Roblox Studio.`;
+
+const CHAT_SYSTEM_PROMPT = `You are a world-class Roblox developer who shipped top-earning games and you are also a great teammate. You master EVERY field: combat systems, UI/UX design, animations & tweens, building & construction mechanics, NPC behavior & pathfinding, physics simulations, audio systems, VFX & lighting, monetization & economy, data persistence, vehicle physics, procedural generation, and game architecture. When the user chats casually, respond naturally and conversationally — like an experienced dev giving advice to a teammate. You can explain concepts, suggest approaches, discuss tradeoffs, and help them think through their game design. When they ask for help, give real, actionable advice based on your experience.`;
+
+const GITHUB_FALLBACK_MODEL = 'gpt-4o-mini';
+
+const GITHUB_COMPATIBLE: Record<string, string> = {
+  'gpt-4o': 'gpt-4o',
+  'gpt-4o-mini': 'gpt-4o-mini',
+  'gpt-4-turbo': 'gpt-4-turbo',
+  'gpt-4': 'gpt-4',
+  'mistral': 'Mistral-large',
+  'gemini-flash': 'gpt-4o-mini',
+};
+
+async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
+  const provider = getProvider();
+  if (!provider) {
+    throw new Error('No API key configured. Set GITHUB_TOKEN (free, from github.com) or OPENROUTER_API_KEY in Vercel env vars.');
   }
 
   const intent = detectIntent(prompt);
   if (intent === 'chat') {
     return {
-      model: model.name, provider: 'openrouter',
+      model: model.name, provider,
       output: chatResponse(prompt),
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     };
   }
 
-  const systemMsg = intent === 'code'
-    ? 'You are a world-class Roblox developer who has built and shipped top-earning games. You are a master of every domain: combat, UI, animations, building systems, NPCs, physics, audio, VFX, monetization, data persistence, vehicle physics, procedural generation, and more. You do not produce "AI slop" — every line of code you write is production-quality, optimized, and follows Roblox best practices.\n\nRules:\n- Use `game:GetService("ServiceName")` pattern\n- Use lowercase 2-space indentation\n- Prefer Enum values over raw numbers\n- Modules use the `local Module = {}; return Module` pattern\n- Return ONLY raw Luau code. No markdown, no backticks, no explanation.\n- The code must work when pasted directly into Roblox Studio.'
-    : 'You are a world-class Roblox developer who shipped top-earning games and you are also a great teammate. You master EVERY field: combat systems, UI/UX design, animations & tweens, building & construction mechanics, NPC behavior & pathfinding, physics simulations, audio systems, VFX & lighting, monetization & economy, data persistence, vehicle physics, procedural generation, and game architecture. When the user chats casually, respond naturally and conversationally — like an experienced dev giving advice to a teammate. You can explain concepts, suggest approaches, discuss tradeoffs, and help them think through their game design. When they ask for help, give real, actionable advice based on your experience.';
-
-  const response = await axios.post(
-    'https://openrouter.ai/api/v1/chat/completions',
-    {
-      model: model.id,
-      messages: [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }],
-      temperature: intent === 'code' ? 0.2 : 0.5,
-      max_tokens: 2000,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-        'X-Title': 'Coconut AI',
-      },
-    }
-  );
-  const output = response.data.choices?.[0]?.message?.content ?? '';
-  const u = response.data.usage || {};
-  const usage = {
-    prompt_tokens: u.prompt_tokens || 0,
-    completion_tokens: u.completion_tokens || 0,
-    total_tokens: (u.prompt_tokens || 0) + (u.completion_tokens || 0),
+  const endpoint = provider === 'github' ? GITHUB_ENDPOINT : OPENROUTER_ENDPOINT;
+  const token = provider === 'github' ? GITHUB_TOKEN : OPENROUTER_API_KEY;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
   };
-  return { model: model.name, provider: 'openrouter', output, usage };
+  if (provider === 'openrouter') {
+    headers['HTTP-Referer'] = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    headers['X-Title'] = 'Coconut AI';
+  }
+
+  let modelId = model.id;
+  if (provider === 'github' && !GITHUB_COMPATIBLE[model.id]) {
+    modelId = GITHUB_FALLBACK_MODEL;
+  }
+
+  try {
+    const response = await axios.post(
+      endpoint,
+      {
+        model: modelId,
+        messages: [
+          { role: 'system', content: intent === 'code' ? CODE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT },
+          { role: 'user', content: prompt },
+        ],
+        temperature: intent === 'code' ? 0.2 : 0.5,
+        max_tokens: 2000,
+      },
+      { headers }
+    );
+
+    const output = response.data.choices?.[0]?.message?.content ?? '';
+    const u = response.data.usage || {};
+    const usage = {
+      prompt_tokens: u.prompt_tokens || 0,
+      completion_tokens: u.completion_tokens || 0,
+      total_tokens: (u.prompt_tokens || 0) + (u.completion_tokens || 0),
+    };
+    const displayModel = modelId === model.id ? model.name : `${model.name} (via ${modelId})`;
+    return { model: displayModel, provider, output, usage };
+  } catch (err: any) {
+    if (provider === 'github' && modelId !== GITHUB_FALLBACK_MODEL) {
+      const fallbackResp = await axios.post(
+        endpoint,
+        {
+          model: GITHUB_FALLBACK_MODEL,
+          messages: [
+            { role: 'system', content: intent === 'code' ? CODE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT },
+            { role: 'user', content: prompt },
+          ],
+          temperature: intent === 'code' ? 0.2 : 0.5,
+          max_tokens: 2000,
+        },
+        { headers }
+      );
+      const fb = fallbackResp.data.choices?.[0]?.message?.content ?? '';
+      const u = fallbackResp.data.usage || {};
+      return {
+        model: `${model.name} (via ${GITHUB_FALLBACK_MODEL})`,
+        provider,
+        output: fb,
+        usage: { prompt_tokens: u.prompt_tokens || 0, completion_tokens: u.completion_tokens || 0, total_tokens: (u.prompt_tokens || 0) + (u.completion_tokens || 0) },
+      };
+    }
+    throw err;
+  }
 }
 
 async function requestLocal(prompt: string, model: AIModel): Promise<AIResponse> {
@@ -101,6 +168,12 @@ async function requestLocal(prompt: string, model: AIModel): Promise<AIResponse>
       output: chatResponse(prompt),
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     };
+  }
+
+  if (hasAnyKey()) {
+    try {
+      return await requestAI(prompt, model);
+    } catch { /* fall through to local */ }
   }
 
   const categories: [RegExp, string][] = [
@@ -282,7 +355,7 @@ export async function generateAIResponse(
   if (selectedModel.provider === 'local') {
     result = await requestLocal(prompt, selectedModel);
   } else {
-    result = await requestOpenRouter(prompt, selectedModel);
+    result = await requestAI(prompt, selectedModel);
   }
 
   insertUsage({

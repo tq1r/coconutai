@@ -37,7 +37,7 @@ export interface SubscriptionTier {
   limits: { generations_per_month: number; max_context_length: number; supported_models: string[] };
 }
 
-export type AIProvider = 'openai' | 'anthropic' | 'google' | 'xai' | 'deepseek' | 'mistral' | 'local' | 'openrouter';
+export type AIProvider = 'openai' | 'anthropic' | 'google' | 'xai' | 'deepseek' | 'mistral' | 'local' | 'openrouter' | 'github';
 
 export interface AIModel {
   id: string;
