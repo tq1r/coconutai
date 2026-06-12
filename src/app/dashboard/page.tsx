@@ -7,7 +7,7 @@ import EditorPanel from '@/components/EditorPanel';
 import Sidebar from '@/components/Sidebar';
 import WaveBackground from '@/components/WaveBackground';
 import SettingsPanel from '@/components/SettingsPanel';
-import type { AIModel, AIResponse, WorkspaceProject, WorkspaceSession, ScriptFile } from '@/types';
+import type { AIModel, AIResponse, WorkspaceSession, ScriptFile } from '@/types';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string }
 
@@ -185,19 +185,12 @@ export default function DashboardPage() {
   }
 
   async function loadProject(name: string, projectId: string) {
-    try {
-      const res = await fetch(`/api/workspace/projects?workspace_name=${encodeURIComponent(name)}`);
-      const payload = await res.json();
-      if (!payload?.success) return;
-      const project = (payload.data || []).find((p: WorkspaceProject) => p.id === projectId);
-      if (!project) { router.replace('/projects'); return; }
-      const existing = files.find((f) => f.projectId === projectId);
-      if (!existing) {
-        const newFile: ScriptFile = { id: projectId, name: project.name + '.lua', content: `-- ${project.name}\n\n`, language: 'lua', projectId, updatedAt: new Date().toISOString() };
-        setFiles((prev) => [...prev, newFile]);
-      }
-      setActiveFileId(projectId);
-    } catch {}
+    const existing = files.find((f) => f.projectId === projectId);
+    if (!existing) {
+      const newFile: ScriptFile = { id: projectId, name: 'script.lua', content: `-- ${projectId.slice(0, 8)}\n\n`, language: 'lua', projectId, updatedAt: new Date().toISOString() };
+      setFiles((prev) => [...prev, newFile]);
+    }
+    setActiveFileId(projectId);
   }
 
   async function fetchExplorerTree() {
