@@ -56,21 +56,46 @@ function TreeView({ items, depth = 0 }: { items: TreeNode[]; depth?: number }) {
 
 function ProjectCard({ project, onOpen, onDelete }: { project: WorkspaceProject; onOpen: () => void; onDelete: () => void }) {
   return (
-    <div className="rounded-xl border p-5 cursor-pointer transition-all hover:opacity-90" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }} onClick={onOpen}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>L</span>
-            <span className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</span>
+    <div
+      onClick={onOpen}
+      className="rounded-2xl border cursor-pointer transition-all hover:shadow-xl hover:-translate-y-0.5 flex flex-col"
+      style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }}
+    >
+      <div className="p-6 flex-1">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>L</div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</h3>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Updated {new Date(project.updated_at).toLocaleDateString()}</p>
           </div>
-          {project.description && <p className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{project.description}</p>}
-          <p className="text-xs mt-2.5" style={{ color: 'var(--text-muted)' }}>Updated {new Date(project.updated_at).toLocaleDateString()}</p>
         </div>
-        <div className="flex gap-1.5 flex-shrink-0">
-          <button onClick={(e) => { e.stopPropagation(); onOpen(); }} className="px-4 py-2 text-xs font-semibold rounded-xl border-0 cursor-pointer transition-all text-white" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>Open</button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="w-8 h-8 rounded-xl flex items-center justify-center border-0 cursor-pointer text-xs transition-all" style={{ background: 'transparent', color: 'var(--text-muted)' }} title="Delete">x</button>
-        </div>
+        {project.description && (
+          <p className="text-sm line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{project.description}</p>
+        )}
       </div>
+      <div className="flex items-center gap-2 px-6 pb-5 pt-0">
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpen(); }}
+          className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all text-white"
+          style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}
+        >Open</button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="w-10 h-10 rounded-xl flex items-center justify-center border cursor-pointer text-sm transition-all"
+          style={{ background: 'var(--bg-surface)', color: 'var(--text-muted)', borderColor: 'var(--border-color)' }}
+          title="Delete"
+        >x</button>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ message, type, onClose }: { message: string; type: 'error' | 'success'; onClose: () => void }) {
+  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, [onClose]);
+  const bg = type === 'error' ? 'var(--danger)' : 'var(--accent)';
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl text-sm font-medium shadow-2xl text-white animate-float-up" style={{ background: bg }}>
+      {message}
     </div>
   );
 }
@@ -95,6 +120,9 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabId>('chat');
   const [showNewFileInput, setShowNewFileInput] = useState(false);
   const [newFileName, setNewFileName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState<'error' | 'success'>('error');
   const [robloxLinked, setRobloxLinked] = useState(false);
   const [robloxUsername, setRobloxUsername] = useState('');
   const [explorerTree, setExplorerTree] = useState<any[] | null>(null);
@@ -120,6 +148,10 @@ export default function DashboardPage() {
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
   useEffect(() => { pluginCodeRef.current = pluginCode; }, [pluginCode]);
+
+  function toast(msg: string, type: 'error' | 'success') {
+    setToastMsg(msg); setToastType(type);
+  }
 
   async function setPluginCodeAndPersist(code: string) {
     const upper = code.toUpperCase();
@@ -218,8 +250,9 @@ export default function DashboardPage() {
       if (payload?.success) {
         setProjects((prev) => prev.filter((p) => p.id !== projectId));
         if (activeProjectId === projectId) { setActiveProjectId(null); setActiveFileId(null); }
-      }
-    } catch { /* ignore */ }
+        toast('Project deleted', 'success');
+      } else toast(payload?.error || 'Delete failed', 'error');
+    } catch { toast('Unable to delete project', 'error'); }
   }
 
   function openProject(projectId: string) {
@@ -242,23 +275,34 @@ export default function DashboardPage() {
   }
 
   async function createProject(name: string) {
-    if (!name.trim()) return;
+    if (!name.trim()) { toast('Enter a project name', 'error'); return; }
+    setCreating(true);
     try {
       const res = await fetch('/api/workspace/projects', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workspace_name: workspaceName, name: name.trim(), description: 'Script project' }),
       });
       const payload = await res.json();
-      if (payload?.success) {
-        const newFile: ScriptFile = { id: payload.data.id, name: name.trim() + '.lua', content: `-- ${name.trim()}\n-- Generated by Coconut AI\n\n`, language: 'lua', projectId: payload.data.id, updatedAt: new Date().toISOString() };
-        setFiles((prev) => [...prev, newFile]);
-        setShowNewFileInput(false); setNewFileName('');
-        await fetchProjects(workspaceName, payload.data.id);
-        setActiveProjectId(payload.data.id);
-        setActiveFileId(payload.data.id);
-        setActiveTab('explorer');
+      if (!payload?.success) {
+        toast(payload?.error || 'Failed to create project', 'error');
+        return;
       }
-    } catch (e) { console.error('Create failed', e); }
+      const newFile: ScriptFile = {
+        id: payload.data.id, name: name.trim() + '.lua',
+        content: `-- ${name.trim()}\n-- Generated by Coconut AI\n\n`,
+        language: 'lua', projectId: payload.data.id, updatedAt: new Date().toISOString(),
+      };
+      setFiles((prev) => [...prev, newFile]);
+      setShowNewFileInput(false); setNewFileName('');
+      await fetchProjects(workspaceName, payload.data.id);
+      setActiveProjectId(payload.data.id);
+      setActiveFileId(payload.data.id);
+      setActiveTab('explorer');
+      toast('Project created', 'success');
+    } catch (e) {
+      console.error('Create failed', e);
+      toast('Unable to create project. Check console.', 'error');
+    } finally { setCreating(false); }
   }
 
   async function fetchExplorerTree() {
@@ -329,54 +373,75 @@ export default function DashboardPage() {
     if (activeFileId) setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: codeSnippet, updatedAt: new Date().toISOString() } : f));
   }
 
+  const toastClose = useCallback(() => setToastMsg(''), []);
+
   // ── Project Dashboard View ─────────────────────────────
   if (!showIde) {
     return (
       <ErrorBoundary>
         <div className="h-screen flex flex-col" style={{ background: 'var(--bg-gradient)' }}>
-          <header className="flex items-center gap-3 px-5 h-12 flex-shrink-0" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
-            <span className="font-bold text-sm" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
+          <header className="flex items-center gap-4 px-8 h-14 flex-shrink-0 border-b" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+            <span className="font-bold text-base tracking-tight" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
             <div className="flex-1" />
-            <span className="text-xs font-medium truncate max-w-[120px]" style={{ color: 'var(--text-secondary)' }}>{userName}</span>
+            {userRole === 'premium' && <span className="px-2.5 py-0.5 rounded text-[11px] font-bold" style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#92400e' }}>* PREMIUM</span>}
+            {userRole === 'admin' && <span className="px-2.5 py-0.5 rounded text-[11px] font-bold" style={{ background: 'linear-gradient(135deg, #fca5a5, #ef4444)', color: '#7f1d1d' }}>* ADMIN</span>}
+            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{userName}</span>
           </header>
 
-          <div className="flex-1 overflow-y-auto" style={{ padding: '48px 48px' }}>
-            <div className="max-w-5xl mx-auto">
-              <div className="flex items-center justify-between mb-10">
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-6xl mx-auto" style={{ padding: '64px 48px' }}>
+              <div className="flex items-end justify-between mb-12">
                 <div>
-                  <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Projects</h1>
-                  <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Select a project to open the workspace</p>
+                  <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Projects</h1>
+                  <p className="text-base mt-2" style={{ color: 'var(--text-muted)' }}>Select a project to open the workspace</p>
                 </div>
-                <button onClick={() => setShowNewFileInput(!showNewFileInput)} className="px-5 py-2.5 text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all text-white" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>+ New Project</button>
+                <button
+                  onClick={() => setShowNewFileInput(!showNewFileInput)}
+                  className="px-6 py-3 text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all text-white hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}
+                >+ New Project</button>
               </div>
 
               {showNewFileInput && (
-                <div className="mb-8 p-5 rounded-xl border" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }}>
+                <div className="mb-10 p-6 rounded-2xl border" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-color)' }}>
                   <input
                     value={newFileName}
                     onChange={(e) => setNewFileName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)}
+                    onKeyDown={(e) => e.key === 'Enter' && !creating && createProject(newFileName)}
                     placeholder="Project name..."
-                    className="w-full outline-none rounded-xl px-4 py-3"
-                    style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: 14 }}
+                    className="w-full outline-none rounded-xl px-5 py-3.5 text-base"
+                    style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
                     autoFocus
                   />
-                  <div className="flex gap-3 mt-3">
-                    <button onClick={() => createProject(newFileName)} className="px-5 py-2.5 text-sm font-semibold rounded-xl border-0 cursor-pointer text-white transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>Create</button>
-                    <button onClick={() => { setShowNewFileInput(false); setNewFileName(''); }} className="px-5 py-2.5 text-sm font-semibold rounded-xl border cursor-pointer transition-all" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>Cancel</button>
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={() => createProject(newFileName)}
+                      disabled={creating}
+                      className="px-6 py-3 text-sm font-semibold rounded-xl border-0 cursor-pointer text-white transition-all"
+                      style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', opacity: creating ? 0.6 : 1 }}
+                    >{creating ? 'Creating...' : 'Create Project'}</button>
+                    <button
+                      onClick={() => { setShowNewFileInput(false); setNewFileName(''); }}
+                      className="px-6 py-3 text-sm font-semibold rounded-xl border cursor-pointer transition-all"
+                      style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
+                    >Cancel</button>
                   </div>
                 </div>
               )}
 
               {projects.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-32">
-                  <div className="text-3xl mb-5 font-mono font-bold" style={{ color: 'var(--text-muted)' }}>{'{ }'}</div>
-                  <p className="text-base font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>No projects yet</p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Create your first project to start building</p>
-                  <button onClick={() => setShowNewFileInput(true)} className="mt-6 px-6 py-3 text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all text-white" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>+ New Project</button>
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold font-mono mb-6" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>{'{ }'}</div>
+                  <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>No projects yet</h2>
+                  <p className="text-base mb-8" style={{ color: 'var(--text-muted)' }}>Create your first project to start building</p>
+                  <button
+                    onClick={() => setShowNewFileInput(true)}
+                    className="px-8 py-3.5 text-base font-semibold rounded-xl border-0 cursor-pointer transition-all text-white hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}
+                  >+ New Project</button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {projects.map((project) => (
                     <ProjectCard
                       key={project.id}
@@ -389,6 +454,7 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+          {toastMsg && <Toast message={toastMsg} type={toastType} onClose={toastClose} />}
         </div>
       </ErrorBoundary>
     );
@@ -398,21 +464,28 @@ export default function DashboardPage() {
   return (
     <ErrorBoundary>
       <div className="h-screen flex flex-col" style={{ background: 'var(--bg-gradient)' }}>
-        <header className="flex items-center gap-3 px-5 h-12 flex-shrink-0" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-color)' }}>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="font-bold text-sm" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
-            <span className="text-xs" style={{ color: 'var(--border-strong)' }}>|</span>
-            <button onClick={goToProjects} className="text-[10px] font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>{'< Projects'}</button>
-            <select value={workspaceName} onChange={(e) => fetchWorkspaceSession(e.target.value)} className="text-xs rounded-lg px-2.5 py-1.5 outline-none max-w-[160px] truncate" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
-              {workspaces.length ? workspaces.map((w) => <option key={w.id} value={w.workspace_name} className="truncate">{w.workspace_name}</option>) : <option className="truncate">{DEFAULT_WORKSPACE}</option>}
-            </select>
-          </div>
+        <header className="flex items-center gap-4 px-6 h-14 flex-shrink-0 border-b" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+          <span className="font-bold text-sm tracking-tight flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
+          <span className="text-xs" style={{ color: 'var(--border-strong)' }}>|</span>
+          <button
+            onClick={goToProjects}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border-0 cursor-pointer transition-all"
+            style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+          >{'< Projects'}</button>
+          <select
+            value={workspaceName}
+            onChange={(e) => fetchWorkspaceSession(e.target.value)}
+            className="text-xs rounded-lg px-3 py-1.5 outline-none max-w-[180px] truncate"
+            style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
+          >
+            {workspaces.length ? workspaces.map((w) => <option key={w.id} value={w.workspace_name} className="truncate">{w.workspace_name}</option>) : <option className="truncate">{DEFAULT_WORKSPACE}</option>}
+          </select>
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
-              <span className="label" style={{ fontSize: 10 }}>Studio</span>
+          <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-1.5 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+              <span style={{ fontSize: 10 }}>Studio</span>
               <input
                 value={pluginCode}
                 onChange={(e) => setPluginCodeAndPersist(e.target.value)}
@@ -421,7 +494,7 @@ export default function DashboardPage() {
                 maxLength={6}
                 style={{ color: 'var(--text-primary)' }}
               />
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: pluginConnected ? 'var(--accent)' : pluginCode.trim().length === 6 ? 'var(--warning)' : 'var(--border-strong)' }} />
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: pluginConnected ? 'var(--accent)' : pluginCode.trim().length === 6 ? 'var(--warning)' : 'var(--border-strong)' }} />
               {pluginConnected && <span className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>Connected</span>}
               {!pluginConnected && pluginCode.trim().length === 6 && <span className="text-[10px] font-medium" style={{ color: 'var(--warning)' }}>Invalid Code</span>}
               {pluginStatus && (
@@ -429,29 +502,25 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <a href="/api/auth/roblox" className="px-2.5 py-1.5 rounded-lg font-medium border no-underline" style={{ background: robloxLinked ? 'var(--accent-soft)' : 'var(--bg-surface)', color: robloxLinked ? 'var(--accent)' : 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
+            <a href="/api/auth/roblox" className="px-3 py-1.5 rounded-lg font-medium border no-underline" style={{ background: robloxLinked ? 'var(--accent-soft)' : 'var(--bg-surface)', color: robloxLinked ? 'var(--accent)' : 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
               {robloxLinked ? `RBX ${robloxUsername}` : 'Link Roblox'}
             </a>
 
-            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: syncStatus === 'Connected' ? 'var(--accent)' : 'var(--text-muted)' }} />
-            <span className="hidden sm:inline">{syncStatus}</span>
-            <span className="hidden sm:inline text-[10px]" style={{ color: 'var(--border-strong)' }}>|</span>
+            {userRole === 'premium' && <span className="px-2.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#92400e' }}>* PREMIUM</span>}
+            {userRole === 'admin' && <span className="px-2.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fca5a5, #ef4444)', color: '#7f1d1d' }}>* ADMIN</span>}
 
-            {userRole === 'premium' && <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#92400e' }}>* PREMIUM</span>}
-            {userRole === 'admin' && <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: 'linear-gradient(135deg, #fca5a5, #ef4444)', color: '#7f1d1d' }}>* ADMIN</span>}
-
-            <span className="px-2.5 py-1.5 rounded-lg border font-medium truncate max-w-[100px] text-xs" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>{userName}</span>
+            <span className="px-3 py-1.5 rounded-xl border font-medium truncate max-w-[120px] text-xs" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>{userName}</span>
           </div>
         </header>
 
-        <div className="flex flex-1 overflow-hidden" style={{ padding: '0 0 0 0' }}>
+        <div className="flex flex-1 overflow-hidden">
           <div className="flex-shrink-0" style={{ borderRight: '1px solid var(--border-color)' }}>
             <Sidebar activeTab={activeTab} onTabChange={handleTabChange}>
               {/* Explorer Panel */}
               {activeTab === 'explorer' && (
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between px-4 h-11 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                    <span className="label" style={{ fontSize: 10 }}>Explorer</span>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Explorer</span>
                     <div className="flex items-center gap-1.5">
                       {pluginCode.trim().length === 6 && (
                         <button onClick={() => { refreshExplorerTree(); fetchExplorerTree(); }} className="px-2 py-1 text-[10px] font-semibold rounded-lg border-0 cursor-pointer transition-all" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
@@ -462,17 +531,16 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Studio Instance Tree */}
                   {pluginCode.trim().length === 6 && (
                     <div className="border-b" style={{ borderColor: 'var(--border-color)' }}>
-                      <div className="flex items-center justify-between px-3 py-1.5">
-                        <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-[10px] font-bold tracking-wider" style={{ color: 'var(--text-muted)' }}>STUDIO</span>
                       </div>
-                      <div className="px-1 pb-1.5 max-h-[260px] overflow-y-auto">
+                      <div className="px-1 pb-2 max-h-[260px] overflow-y-auto">
                         {explorerTree ? (
                           <TreeView items={explorerTree} depth={0} />
                         ) : (
-                          <div className="flex items-center justify-center py-4">
+                          <div className="flex items-center justify-center py-5">
                             <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{explorerLoading ? 'Loading...' : 'Click + to fetch'}</p>
                           </div>
                         )}
@@ -480,11 +548,10 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Local Scripts */}
-                  <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                    <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>SCRIPTS</span>
+                  <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <span className="text-[10px] font-bold tracking-wider" style={{ color: 'var(--text-muted)' }}>SCRIPTS</span>
                     {showNewFileInput && (
-                      <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createProject(newFileName)} placeholder="script.lua" className="w-24 text-[10px] outline-none" style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px 8px' }} autoFocus />
+                      <input value={newFileName} onChange={(e) => setNewFileName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !creating && createProject(newFileName)} placeholder="script.lua" className="w-24 text-[10px] outline-none" style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px 8px' }} autoFocus />
                     )}
                   </div>
                   <div className="flex-1 overflow-y-auto py-1 px-1 space-y-0.5">
@@ -502,7 +569,7 @@ export default function DashboardPage() {
               {activeTab === 'chat' && (
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between px-4 h-11 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                    <span className="label" style={{ fontSize: 10 }}>AI Assistant</span>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>AI Assistant</span>
                     <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[11px] rounded-lg px-2 py-1 outline-none max-w-[130px] truncate font-medium" style={{ background: 'var(--bg-surface)', color: 'var(--accent)', border: '1px solid var(--border-color)' }}>
                       {models.map((m) => <option key={m.id} value={m.id}>{m.name} {m.premium ? '*' : 'o'}</option>)}
                     </select>
@@ -511,32 +578,32 @@ export default function DashboardPage() {
                   <div className="flex-1 overflow-y-auto" style={{ padding: '12px 14px' }}>
                     {chatHistory.length === 0 ? (
                       <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '300px' }}>
-                        <div className="text-2xl mb-4 font-mono font-bold" style={{ color: 'var(--text-muted)' }}>{'<AI>'}</div>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold font-mono mb-4" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>{'<AI>'}</div>
                         <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate Roblox code</p>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, economy, or anything</p>
                       </div>
                     ) : chatHistory.map((msg, i) => (
                       <div key={i}>
                         {msg.role === 'user' && (
-                          <div className="flex items-start gap-2" style={{ marginBottom: '14px' }}>
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
+                          <div className="flex items-start gap-2" style={{ marginBottom: '16px' }}>
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>U</div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[10px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>You</p>
-                              <div className="rounded-xl px-3.5 py-2.5 inline-block" style={{ background: 'var(--accent-soft)', color: 'var(--text-primary)', maxWidth: '90%' }}>
+                              <div className="rounded-2xl px-4 py-3 inline-block" style={{ background: 'var(--accent-soft)', color: 'var(--text-primary)', maxWidth: '88%' }}>
                                 <p className="text-sm" style={{ lineHeight: 1.5 }}>{msg.text}</p>
                               </div>
                             </div>
                           </div>
                         )}
                         {msg.role === 'assistant' && (
-                          <div className="flex items-start gap-2" style={{ marginBottom: '14px' }}>
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-bold" style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-color)', color: 'var(--accent)' }}>AI</div>
+                          <div className="flex items-start gap-2" style={{ marginBottom: '16px' }}>
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-color)', color: 'var(--accent)' }}>AI</div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[10px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
-                              <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
+                              <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
                                 <pre className="whitespace-pre-wrap font-sans text-sm" style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}>{msg.text}</pre>
                                 {(msg.text.includes('function') || msg.text.includes('local ')) && (
-                                  <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2.5 text-xs text-white font-medium px-3.5 py-1.5 rounded-lg border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
+                                  <button onClick={() => applyCodeFromChat(msg.text)} className="mt-3 text-xs text-white font-medium px-4 py-2 rounded-xl border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>
                                     Apply to Editor
                                   </button>
                                 )}
@@ -557,10 +624,10 @@ export default function DashboardPage() {
                       onChange={(e) => setPrompt(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
                       placeholder="Describe what to build..."
-                      className="w-full resize-none text-sm rounded-xl px-3.5 py-2.5"
+                      className="w-full resize-none text-sm rounded-xl px-4 py-3"
                       style={{ background: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: 13, lineHeight: 1.5, outline: 'none' }}
                     />
-                    <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-xs font-semibold text-white mt-2 rounded-lg px-4 py-2.5 border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', opacity: isGenerating ? 0.6 : 1 }}>
+                    <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-sm font-semibold text-white mt-2.5 rounded-xl px-4 py-3 border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', opacity: isGenerating ? 0.6 : 1 }}>
                       {isGenerating ? 'Generating...' : 'Generate'}
                     </button>
                   </div>
@@ -582,19 +649,19 @@ export default function DashboardPage() {
           </div>
 
           {/* Editor */}
-          <main className="flex-1 flex flex-col overflow-hidden" style={{ padding: '12px 16px 12px 12px' }}>
-            <div className="flex-1 flex flex-col overflow-hidden rounded-xl border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)' }}>
+          <main className="flex-1 flex flex-col overflow-hidden" style={{ padding: '14px 20px 14px 14px' }}>
+            <div className="flex-1 flex flex-col overflow-hidden rounded-2xl border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)' }}>
               <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
             </div>
           </main>
         </div>
 
         {/* Status Bar */}
-        <footer className="flex items-center justify-between px-5 h-7 border-t text-[10px] flex-shrink-0" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
-          <div className="flex items-center gap-4">
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('explorer')}>[.] Explorer</span>
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('chat')}>&lt;AI&gt; AI Chat</span>
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('settings')}>[=] Settings</span>
+        <footer className="flex items-center justify-between px-6 h-8 border-t text-[11px] flex-shrink-0" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+          <div className="flex items-center gap-5">
+            <span className="cursor-pointer font-medium transition-colors" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('explorer')}>[.] Explorer</span>
+            <span className="cursor-pointer font-medium transition-colors" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('chat')}>&lt;AI&gt; AI Chat</span>
+            <span className="cursor-pointer font-medium transition-colors" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('settings')}>[=] Settings</span>
           </div>
           <div className="flex items-center gap-4">
             <span>Ln 1</span>
@@ -603,6 +670,7 @@ export default function DashboardPage() {
           </div>
         </footer>
       </div>
+      {toastMsg && <Toast message={toastMsg} type={toastType} onClose={toastClose} />}
     </ErrorBoundary>
   );
 }
