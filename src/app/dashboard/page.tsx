@@ -23,7 +23,7 @@ end
 return module
 `;
 
-type TabId = 'explorer' | 'chat' | 'settings';
+type TabId = 'projects' | 'explorer' | 'chat' | 'settings';
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState('Creator');
@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [files, setFiles] = useState<ScriptFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('chat');
+  const [activeTab, setActiveTab] = useState<TabId>('projects');
   const [showNewFileInput, setShowNewFileInput] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [robloxLinked, setRobloxLinked] = useState(false);
@@ -157,6 +157,31 @@ export default function DashboardPage() {
     } catch { /* ignore */ }
   }
 
+  async function deleteProject(projectId: string) {
+    if (!confirm('Delete this project?')) return;
+    try {
+      const res = await fetch(`/api/workspace/projects?project_id=${projectId}`, { method: 'DELETE' });
+      const payload = await res.json();
+      if (payload?.success) {
+        setProjects((prev) => prev.filter((p) => p.id !== projectId));
+        if (activeProjectId === projectId) { setActiveProjectId(null); setActiveFileId(null); }
+      }
+    } catch { /* ignore */ }
+  }
+
+  function openProject(projectId: string) {
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+    setActiveProjectId(projectId);
+    const existing = files.find((f) => f.projectId === projectId);
+    if (existing) setActiveFileId(existing.id);
+    else {
+      const newFile: ScriptFile = { id: projectId, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId, updatedAt: new Date().toISOString() };
+      setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
+    }
+    setActiveTab('explorer');
+  }
+
   async function createProject(name: string) {
     if (!name.trim()) return;
     try {
@@ -269,6 +294,43 @@ export default function DashboardPage() {
           {/* Sidebar with Activity Bar */}
           <div className="flex-shrink-0" style={{ borderRight: '1px solid var(--border-color)' }}>
             <Sidebar activeTab={activeTab} onTabChange={setActiveTab}>
+              {/* Projects Panel */}
+              {activeTab === 'projects' && (
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between px-4 h-11 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <span className="label" style={{ fontSize: 10 }}>Projects</span>
+                    <button onClick={() => { setShowNewFileInput(true); setActiveTab('explorer'); }} className="w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border-0 text-xs font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>+</button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                    {projects.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '250px' }}>
+                        <p className="text-3xl mb-3">🗂️</p>
+                        <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>No projects yet</p>
+                        <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>Create your first project<br />to start building in Roblox Studio</p>
+                        <button onClick={() => { setShowNewFileInput(true); setActiveTab('explorer'); }} className="mt-4 text-xs font-semibold text-white px-4 py-2 rounded-lg border-0 cursor-pointer transition-all" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>New Project</button>
+                      </div>
+                    ) : projects.map((project) => (
+                      <div key={project.id} className="rounded-xl border p-3.5 cursor-pointer transition-all hover:opacity-90" style={{ background: 'var(--bg-elevated)', borderColor: activeProjectId === project.id ? 'var(--accent)' : 'var(--border-color)' }} onClick={() => openProject(project.id)}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-base">📄</span>
+                              <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</span>
+                            </div>
+                            {project.description && <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{project.description}</p>}
+                            <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>Updated {new Date(project.updated_at).toLocaleDateString()}</p>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button onClick={(e) => { e.stopPropagation(); openProject(project.id); }} className="px-2.5 py-1.5 text-[10px] font-semibold rounded-lg border-0 cursor-pointer transition-all text-white" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)' }}>Open</button>
+                            <button onClick={(e) => { e.stopPropagation(); deleteProject(project.id); }} className="w-7 h-7 rounded-lg flex items-center justify-center border-0 cursor-pointer text-xs transition-all" style={{ background: 'transparent', color: 'var(--text-muted)' }} title="Delete">✕</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Explorer Panel */}
               {activeTab === 'explorer' && (
                 <div className="flex flex-col h-full">
@@ -283,15 +345,7 @@ export default function DashboardPage() {
                   )}
                   <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
                     {projects.map((project) => (
-                      <button key={project.id} onClick={() => {
-                        setActiveProjectId(project.id);
-                        const existing = files.find((f) => f.projectId === project.id);
-                        if (existing) setActiveFileId(existing.id);
-                        else {
-                          const newFile: ScriptFile = { id: project.id, name: project.name + '.lua', content: `-- ${project.name}\n-- ${project.description || 'Roblox script'}\n\n`, language: 'lua', projectId: project.id, updatedAt: new Date().toISOString() };
-                          setFiles((prev) => [...prev, newFile]); setActiveFileId(newFile.id);
-                        }
-                      }} className="w-full text-left px-3 py-2 text-xs rounded-lg transition-all truncate border cursor-pointer" style={activeProjectId === project.id ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--border-color)', fontWeight: 500 } : { background: 'transparent', color: 'var(--text-secondary)', borderColor: 'transparent' }}>
+                      <button key={project.id} onClick={() => openProject(project.id)} className="w-full text-left px-3 py-2 text-xs rounded-lg transition-all truncate border cursor-pointer" style={activeProjectId === project.id ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--border-color)', fontWeight: 500 } : { background: 'transparent', color: 'var(--text-secondary)', borderColor: 'transparent' }}>
                         📄 {project.name}.lua
                       </button>
                     ))}
@@ -332,7 +386,7 @@ export default function DashboardPage() {
                         )}
                         {msg.role === 'assistant' && (
                           <div className="flex items-start gap-2" style={{ marginBottom: '14px' }}>
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm" style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-color)' }}>🤖</div>
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm" style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-color)' }}>🥥</div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[10px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
                               <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
@@ -394,8 +448,9 @@ export default function DashboardPage() {
         {/* ── Status Bar ─────────────────────────────────── */}
         <footer className="flex items-center justify-between px-5 h-7 border-t text-[10px] flex-shrink-0" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
           <div className="flex items-center gap-4">
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'projects' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('projects')}>🗂️ Projects</span>
             <span className="cursor-pointer font-medium" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('explorer')}>📁 Explorer</span>
-            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('chat')}>🤖 AI Chat</span>
+            <span className="cursor-pointer font-medium" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('chat')}>🥥 AI Chat</span>
             <span className="cursor-pointer font-medium" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit' }} onClick={() => setActiveTab('settings')}>⚙️ Settings</span>
           </div>
           <div className="flex items-center gap-4">

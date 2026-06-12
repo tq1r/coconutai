@@ -1,6 +1,6 @@
 'use client';
 
-type TabId = 'explorer' | 'chat' | 'settings';
+type TabId = 'projects' | 'explorer' | 'chat' | 'settings';
 
 interface SidebarProps {
   activeTab: TabId;
@@ -9,8 +9,9 @@ interface SidebarProps {
 }
 
 const tabs: { id: TabId; label: string; icon: string }[] = [
+  { id: 'projects', label: 'Projects', icon: '🗂️' },
   { id: 'explorer', label: 'Explorer', icon: '📁' },
-  { id: 'chat', label: 'AI Chat', icon: '🤖' },
+  { id: 'chat', label: 'AI Chat', icon: '🥥' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ];
 
@@ -47,7 +48,7 @@ export default function Sidebar({ activeTab, onTabChange, children }: SidebarPro
           </button>
         ))}
       </div>
-      <div className="flex flex-col flex-1 overflow-hidden" style={{ width: '100%', minWidth: '240px', maxWidth: '100%' }}>
+      <div className="flex flex-col flex-1 overflow-hidden" style={{ width: '360px', minWidth: '360px', maxWidth: '360px' }}>
         {children}
       </div>
     </div>
