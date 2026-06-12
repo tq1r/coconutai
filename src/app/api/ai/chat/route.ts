@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
 
 export const POST = withAuth(async (request: NextRequest, context) => {
   const body = await request.json();
-  const { prompt, modelId, workspaceName, projectId, projectName } = body;
+  const { prompt, modelId, workspaceName, projectId, projectName, sessionCode } = body;
 
   if (!prompt || typeof prompt !== 'string' || !modelId || typeof modelId !== 'string') {
     return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
@@ -25,7 +25,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
       context.subscriptionExpiresAt,
       selectedWorkspace,
       typeof projectId === 'string' && projectId.trim().length > 0 ? projectId.trim() : undefined,
-      typeof projectName === 'string' && projectName.trim().length > 0 ? projectName.trim() : undefined
+      typeof projectName === 'string' && projectName.trim().length > 0 ? projectName.trim() : undefined,
+      typeof sessionCode === 'string' && sessionCode.trim().length > 0 ? sessionCode.trim() : undefined
     );
     return NextResponse.json({ success: true, data: aiResponse }, { status: 200 });
   } catch (error: any) {

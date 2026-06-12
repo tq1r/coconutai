@@ -176,7 +176,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/ai/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, modelId: selectedModel, workspaceName, projectId: activeProjectId, projectName: projects.find((p) => p.id === activeProjectId)?.name }),
+        body: JSON.stringify({ prompt, modelId: selectedModel, workspaceName, projectId: activeProjectId, projectName: projects.find((p) => p.id === activeProjectId)?.name, sessionCode: pluginCode }),
       });
       const data = await res.json();
       if (!data?.success) { setError(data?.error || 'Generation failed'); return; }

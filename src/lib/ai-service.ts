@@ -19,7 +19,9 @@ function getProvider(): 'github' | 'openrouter' | null {
   return null;
 }
 
-const SYSTEM_PROMPT = `You are Coconut AI, a world-class AI assistant who knows everything. You are a master of every domain: software engineering, game development, math, science, history, literature, art, music, pop culture, and general knowledge. You respond naturally and conversationally — like a brilliant friend who happens to know everything. You can answer any question: casual chat, weather, advice, coding, writing, analysis, you name it. When the user asks for code, write clean production-quality code. When they ask about the weather or random topics, answer helpfully. Be warm, direct, and never robotic.`;
+const SYSTEM_PROMPT = `You are Coconut AI, a world-class AI assistant who knows everything. You are a master of every domain: software engineering, game development, math, science, history, literature, art, music, pop culture, and general knowledge. You respond naturally and conversationally — like a brilliant friend who happens to know everything. You can answer any question: casual chat, weather, advice, coding, writing, analysis, you name it. When the user asks for code, write clean production-quality code. When they ask about the weather or random topics, answer helpfully. Be warm, direct, and never robotic.
+
+You also have the ability to push code into Roblox Studio through a plugin connection. When connected, you can create and edit scripts, generate builds, create animations, apply VFX, and more — all live inside the user's Roblox Studio. The user will enter a session code from the Coconut AI Studio Plugin to connect.`;
 
 const GITHUB_FALLBACK_MODEL = 'gpt-4o-mini';
 
@@ -32,11 +34,30 @@ const GITHUB_COMPATIBLE: Record<string, string> = {
   'gemini-flash': 'gpt-4o-mini',
 };
 
-async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
+async function requestAI(prompt: string, model: AIModel, sessionCode?: string): Promise<AIResponse> {
   const provider = getProvider();
   if (!provider) {
     throw new Error('No API key configured. Set GITHUB_TOKEN (free, from github.com) or OPENROUTER_API_KEY in Vercel env vars.');
   }
+
+  let connectionContext = '';
+  if (sessionCode && sessionCode.trim().length === 6) {
+    try {
+      const { findPluginSession } = await import('./db');
+      const session = await findPluginSession(sessionCode.trim());
+      if (session && session.status === 'active') {
+        connectionContext = 'You are CURRENTLY CONNECTED to the user\'s Roblox Studio via the plugin session. This means you can create and edit scripts, generate builds, animate, apply VFX, and push code directly into their Roblox Studio project. The user will see your work appear live.';
+      } else {
+        connectionContext = 'You are NOT connected to Roblox Studio. The user has not entered a valid session code yet. Tell them they need to paste a session code from the Coconut AI Studio Plugin to enable live code pushes.';
+      }
+    } catch {
+      connectionContext = '';
+    }
+  }
+
+  const systemPrompt = connectionContext
+    ? SYSTEM_PROMPT + '\n\n---\n' + connectionContext
+    : SYSTEM_PROMPT;
 
   const endpoint = provider === 'github' ? GITHUB_ENDPOINT : OPENROUTER_ENDPOINT;
   const token = provider === 'github' ? GITHUB_TOKEN : OPENROUTER_API_KEY;
@@ -60,7 +81,7 @@ async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
       {
         model: modelId,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt },
         ],
         temperature: 0.5,
@@ -85,7 +106,7 @@ async function requestAI(prompt: string, model: AIModel): Promise<AIResponse> {
         {
           model: GITHUB_FALLBACK_MODEL,
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt },
           ],
           temperature: 0.5,
@@ -278,7 +299,8 @@ return module`,
 export async function generateAIResponse(
   prompt: string, modelId: string, userId: string, role: string,
   subscriptionActive: boolean, subscriptionExpiresAt: string | null,
-  workspaceName = 'Coconut AI Workspace', projectId?: string, projectName?: string
+  workspaceName = 'Coconut AI Workspace', projectId?: string, projectName?: string,
+  sessionCode?: string
 ): Promise<AIResponse> {
   const selectedModel = getModelById(modelId);
   if (!selectedModel) throw new Error('Unsupported model selected');
@@ -292,7 +314,7 @@ export async function generateAIResponse(
   if (selectedModel.provider === 'local') {
     result = await requestLocal(prompt, selectedModel);
   } else {
-    result = await requestAI(prompt, selectedModel);
+    result = await requestAI(prompt, selectedModel, sessionCode);
   }
 
   insertUsage({
