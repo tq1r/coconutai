@@ -51,4 +51,4 @@ export const GET = withAuth(async (request: NextRequest, context) => {
     return NextResponse.json({ success: true, user });
   }
   return NextResponse.json({ success: true, message: 'Admin API ready' });
-});
+}, { allowAdminKey: true });
