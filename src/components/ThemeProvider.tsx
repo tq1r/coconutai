@@ -2,21 +2,21 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-type Theme = 'beach' | 'dark' | 'ocean' | 'sunset';
+type Theme = 'coconut' | 'midnight' | 'obsidian';
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (t: Theme) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({ theme: 'beach', setTheme: () => {} });
+const ThemeContext = createContext<ThemeContextType>({ theme: 'coconut', setTheme: () => {} });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('beach');
+  const [theme, setTheme] = useState<Theme>('coconut');
 
   useEffect(() => {
     const saved = localStorage.getItem('coconut-theme') as Theme | null;
-    if (saved && ['beach', 'dark', 'ocean', 'sunset'].includes(saved)) {
+    if (saved && ['coconut', 'midnight', 'obsidian'].includes(saved)) {
       setTheme(saved);
       document.documentElement.setAttribute('data-theme', saved);
     }

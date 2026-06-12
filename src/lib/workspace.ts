@@ -33,24 +33,24 @@ export async function createOrUpdateWorkspaceSession(
   );
 
   if (existing) {
-    await upsertWorkspaceSession(key, {
+    const updated = {
       ...existing,
       status: payload.status ?? 'active',
       last_synced_at: payload.last_synced_at ?? t,
       metadata: mergedMetadata,
       updated_at: t,
-    });
-    const updated = await findWorkspaceSession(userId, workspaceName);
-    return updated ? toSession(updated) : null;
+    };
+    await upsertWorkspaceSession(key, updated);
+    return toSession(updated);
   }
 
-  await upsertWorkspaceSession(key, {
+  const created = {
     id: generateId(), user_id: userId, workspace_name: workspaceName,
     status: payload.status ?? 'active', last_synced_at: payload.last_synced_at ?? t,
     metadata: mergedMetadata, created_at: t, updated_at: t,
-  });
-  const created = await findWorkspaceSession(userId, workspaceName);
-  return created ? toSession(created) : null;
+  };
+  await upsertWorkspaceSession(key, created);
+  return toSession(created);
 }
 
 function mergeMetadata(existing: Record<string, any> | null, incoming: Record<string, any> | null) {

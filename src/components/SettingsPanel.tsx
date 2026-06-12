@@ -3,10 +3,9 @@
 import { useTheme } from './ThemeProvider';
 
 const themes = [
-  { id: 'beach', label: 'Beach', icon: '~', desc: 'Warm sand & sea breeze', bg: '#fdfaf5', accent: '#14b8a6' },
-  { id: 'dark', label: 'Dark', icon: '*', desc: 'Easy on the eyes', bg: '#0c0a09', accent: '#2dd4bf' },
-  { id: 'ocean', label: 'Ocean', icon: '~', desc: 'Deep blue waters', bg: '#f0f9ff', accent: '#0284c7' },
-  { id: 'sunset', label: 'Sunset', icon: '~', desc: 'Golden hour glow', bg: '#fff7ed', accent: '#f97316' },
+  { id: 'coconut', label: 'Coconut', icon: '~', desc: 'Warm amber dark', bg: '#0a0a0f', accent: '#d97706' },
+  { id: 'midnight', label: 'Midnight', icon: '*', desc: 'Cool blue dark', bg: '#070712', accent: '#3b82f6' },
+  { id: 'obsidian', label: 'Obsidian', icon: '*', desc: 'Deep purple dark', bg: '#050508', accent: '#a855f7' },
 ];
 
 interface SettingsPanelProps {
@@ -23,11 +22,10 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ padding: '20px 16px' }}>
-      <h2 style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '20px' }}>Settings</h2>
+      <h2 className="label" style={{ marginBottom: '20px' }}>Settings</h2>
 
-      {/* Theme */}
       <section style={{ marginBottom: '28px' }}>
-        <h3 style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Appearance</h3>
+        <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Appearance</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {themes.map((t) => (
             <button
@@ -40,22 +38,21 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
                 cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.15s',
               }}
             >
-              <span style={{ fontSize: '24px', lineHeight: 1 }}>{t.icon}</span>
+              <span className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: t.accent }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{t.label}</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.desc}</div>
               </div>
               {theme === t.id && (
-                <span style={{ color: 'var(--accent)', fontSize: '16px' }}>✓</span>
+                <span style={{ color: 'var(--accent)', fontSize: '14px' }}>o</span>
               )}
             </button>
           ))}
         </div>
       </section>
 
-      {/* Account */}
       <section style={{ marginBottom: '28px' }}>
-        <h3 style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Account</h3>
+        <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Account</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Username</div>
           <div style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500 }}>{userName}</div>
@@ -66,10 +63,9 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
         </div>
       </section>
 
-      {/* Roblox */}
       {robloxUsername && (
         <section style={{ marginBottom: '28px' }}>
-          <h3 style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Roblox Account</h3>
+          <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Roblox Account</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>RBX</span>
             <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500 }}>{robloxUsername}</span>
@@ -77,9 +73,8 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
         </section>
       )}
 
-      {/* Studio Plugin */}
       <section>
-        <h3 style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '10px' }}>Studio Plugin Sync</h3>
+        <h3 className="label" style={{ color: 'var(--text-secondary)', marginBottom: '10px' }}>Studio Plugin Sync</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Plugin connection code (6 characters)</div>
           <input
