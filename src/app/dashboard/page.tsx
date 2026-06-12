@@ -48,6 +48,7 @@ export default function DashboardPage() {
   const [robloxLinked, setRobloxLinked] = useState(false);
   const [robloxUsername, setRobloxUsername] = useState('');
   const [pluginCode, setPluginCode] = useState('');
+  const [pluginConnected, setPluginConnected] = useState(false);
   const [pluginStatus, setPluginStatus] = useState('');
   const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -58,7 +59,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchCurrentUser(); fetchModels(); fetchWorkspaceList();
     const saved = localStorage.getItem('coconut-plugin-code');
-    if (saved) setPluginCode(saved);
+    if (saved) setPluginCodeAndPersist(saved);
     const params = new URLSearchParams(window.location.search);
     const rbx = params.get('roblox');
     if (rbx === 'linked') fetchCurrentUser();
@@ -68,10 +69,18 @@ export default function DashboardPage() {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
   useEffect(() => { pluginCodeRef.current = pluginCode; }, [pluginCode]);
 
-  function setPluginCodeAndPersist(code: string) {
+  async function setPluginCodeAndPersist(code: string) {
     const upper = code.toUpperCase();
     setPluginCode(upper);
-    if (upper.length === 6) localStorage.setItem('coconut-plugin-code', upper);
+    setPluginConnected(false);
+    if (upper.length === 6) {
+      localStorage.setItem('coconut-plugin-code', upper);
+      try {
+        const res = await fetch(`/api/plugin/verify?code=${upper}`);
+        const data = await res.json();
+        setPluginConnected(data?.connected === true);
+      } catch { setPluginConnected(false); }
+    }
   }
 
   async function fetchCurrentUser() {
@@ -230,10 +239,9 @@ export default function DashboardPage() {
                 maxLength={6}
                 style={{ color: 'var(--text-primary)' }}
               />
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: pluginCode.trim().length === 6 ? 'var(--accent)' : 'var(--border-strong)' }} />
-              {pluginCode.trim().length === 6 && (
-                <span className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>Synced</span>
-              )}
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: pluginConnected ? 'var(--accent)' : pluginCode.trim().length === 6 ? 'var(--warning)' : 'var(--border-strong)' }} />
+              {pluginConnected && <span className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>Connected</span>}
+              {!pluginConnected && pluginCode.trim().length === 6 && <span className="text-[10px] font-medium" style={{ color: 'var(--warning)' }}>Invalid Code</span>}
               {pluginStatus && (
                 <span className="text-[10px] font-medium whitespace-nowrap" style={{ color: pluginStatus.includes('error') || pluginStatus.includes('fail') ? 'var(--danger)' : 'var(--accent)' }}>{pluginStatus}</span>
               )}
