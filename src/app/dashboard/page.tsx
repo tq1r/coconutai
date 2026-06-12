@@ -47,6 +47,7 @@ export default function DashboardPage() {
   const [robloxStatus, setRobloxStatus] = useState('');
   const [pluginCode, setPluginCode] = useState('');
   const [pluginStatus, setPluginStatus] = useState('');
+  const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const activeFile = files.find((f) => f.id === activeFileId);
@@ -54,6 +55,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchCurrentUser(); fetchModels(); fetchWorkspaceList();
+    const saved = localStorage.getItem('coconut-plugin-code');
+    if (saved) setPluginCode(saved);
     const params = new URLSearchParams(window.location.search);
     const rbx = params.get('roblox');
     if (rbx === 'linked') { setRobloxStatus('✅ Roblox linked!'); fetchCurrentUser(); }
@@ -64,6 +67,14 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
+
+  useEffect(() => { pluginCodeRef.current = pluginCode; }, [pluginCode]);
+
+  function setPluginCodeAndPersist(code: string) {
+    const upper = code.toUpperCase();
+    setPluginCode(upper);
+    if (upper.length === 6) localStorage.setItem('coconut-plugin-code', upper);
+  }
 
   async function fetchCurrentUser() {
     try {
@@ -173,11 +184,12 @@ export default function DashboardPage() {
       const aiResponse: AIResponse = data.data;
       setChatHistory((prev) => [...prev, { role: 'user', text: prompt }, { role: 'assistant', text: aiResponse.output }]);
       setPrompt(''); setSyncStatus('Saved');
-      if (pluginCode.trim()) {
+      const activeCode = pluginCodeRef.current;
+      if (activeCode.length === 6) {
         try {
           const pushRes = await fetch('/api/plugin/push', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: pluginCode.trim().toUpperCase(), script: aiResponse.output }),
+            body: JSON.stringify({ code: activeCode, script: aiResponse.output }),
           });
           const pushData = await pushRes.json();
           setPluginStatus(pushData.success ? 'Pushed to Studio' : 'Push failed');
@@ -213,7 +225,7 @@ export default function DashboardPage() {
               <span className="label" style={{ fontSize: 10 }}>Studio</span>
               <input
                 value={pluginCode}
-                onChange={(e) => setPluginCode(e.target.value.toUpperCase())}
+                onChange={(e) => setPluginCodeAndPersist(e.target.value)}
                 placeholder="XXX XXX"
                 className="w-16 bg-transparent text-xs outline-none uppercase tracking-widest font-mono"
                 maxLength={6}
