@@ -24,6 +24,8 @@ export default function ProjectsPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [renameProjectId, setRenameProjectId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
   function toast(msg: string, type: 'error' | 'success') {
@@ -106,6 +108,23 @@ export default function ProjectsPage() {
         toast('Project deleted', 'success');
       } else toast(payload?.error || 'Delete failed', 'error');
     } catch { toast('Unable to delete project', 'error'); }
+  }
+
+  async function renameProject(projectId: string) {
+    const name = renameValue.trim();
+    if (!name) { setRenameProjectId(null); return; }
+    try {
+      const res = await fetch('/api/workspace/projects', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId, name }),
+      });
+      const payload = await res.json();
+      if (payload?.success) {
+        setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, name } : p));
+        toast('Project renamed', 'success');
+      } else toast(payload?.error || 'Rename failed', 'error');
+    } catch { toast('Unable to rename project', 'error'); }
+    setRenameProjectId(null);
   }
 
   function openProject(projectId: string) {
@@ -215,12 +234,25 @@ export default function ProjectsPage() {
                   style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', borderRadius: '4px', padding: '16px 18px', transition: 'all 0.15s ease' }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-soft)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.background = 'var(--bg-surface-solid)'; }}
-                  onClick={() => openProject(project.id)}
-                >
+                  onClick={() => { if (renameProjectId !== project.id) openProject(project.id); }}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <span className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>L</span>
-                      <span className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</span>
+                      {renameProjectId === project.id ? (
+                        <input
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') renameProject(project.id); if (e.key === 'Escape') setRenameProjectId(null); }}
+                          onBlur={() => renameProject(project.id)}
+                          className="text-xs font-medium px-1.5 py-0.5 outline-none"
+                          style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '2px', width: '100%' }}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="Rename project"
+                        />
+                      ) : (
+                        <span className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }} onDoubleClick={(e) => { e.stopPropagation(); setRenameProjectId(project.id); setRenameValue(project.name); }}>{project.name}</span>
+                      )}
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDelete(project.id); }}
