@@ -478,9 +478,20 @@ export default function DashboardPage() {
 
         <div className="flex-1 overflow-y-auto" style={{ padding: '8px 10px' }}>
           {chatHistory.length === 0 ? (
-            <div className="flex flex-col items-center justify-center" style={{ height: '100%', minHeight: '160px' }}>
-              <p className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate code</p>
-              <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>Combat, UI, movement, and more</p>
+            <div className="flex flex-col" style={{ padding: '16px 0' }}>
+              <p className="text-[11px] font-medium mb-3 text-center" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate code</p>
+              <div className="flex flex-col gap-1.5 px-2">
+                {['Sword attack animation with raycast hit detection', 'Inventory system with hotbar UI', 'Part sliding physics system', 'Leaderboard GUI with animated scores', 'NPC patrol path with waypoints'].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => { setPrompt(suggestion); }}
+                    className="w-full text-left text-[10px] px-2.5 py-1.5 transition-all border-0 cursor-pointer"
+                    style={{ background: 'var(--accent-soft)', color: 'var(--text-secondary)', borderRadius: '4px' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent-soft)'}
+                  >{suggestion}</button>
+                ))}
+              </div>
             </div>
               ) : chatHistory.map((msg, i) => (
             <div key={i} className="animate-slide-up" style={{ animationDelay: '0ms' }}>
