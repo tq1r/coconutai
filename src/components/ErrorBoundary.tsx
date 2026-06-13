@@ -21,7 +21,7 @@ export default class ErrorBoundary extends Component<{ children: React.ReactNode
           <pre className="mt-4 text-xs text-left p-4 rounded max-w-xl mx-auto overflow-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
             {this.state.error.message}
           </pre>
-          <button onClick={() => { this.setState({ error: null }); window.location.href = '/dashboard'; }}
+          <button onClick={() => { this.setState({ error: null }); window.location.reload(); }}
             className="btn-neon mt-4 text-sm">
             Reload
           </button>

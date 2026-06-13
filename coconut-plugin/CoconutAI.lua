@@ -839,6 +839,6 @@ toggleBtn.Click:Connect(function()
 end)
 
 -- Startup
-addLog("Coconut AI v2.1 loaded", C.primary, true)
+addLog("Coconut AI v2.2 loaded", C.primary, true)
 addLog("Click 'Create Session' and enter the code in the web app to connect", C.textSec, false)
 setStatus("Ready", C.textSec, C.textMuted)

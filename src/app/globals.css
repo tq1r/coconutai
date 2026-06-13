@@ -25,8 +25,10 @@
   --bg-editor: rgba(10, 10, 8, 0.95);
   --bg-code: #0a0a08;
   --bg-input: #141410;
+  --bg-card: #141410;
   --border-color: rgba(64, 48, 32, 0.5);
   --border-strong: #3a3028;
+  --border-weak: rgba(64, 48, 32, 0.2);
   --text-primary: #e8e0d8;
   --text-secondary: #908880;
   --text-muted: #606060;
@@ -53,8 +55,10 @@
   --bg-editor: rgba(8, 8, 16, 0.95);
   --bg-code: #080810;
   --bg-input: #101020;
+  --bg-card: #101020;
   --border-color: rgba(32, 40, 64, 0.5);
   --border-strong: #283050;
+  --border-weak: rgba(32, 40, 64, 0.2);
   --text-primary: #d8dce8;
   --text-secondary: #8088a0;
   --text-muted: #585878;
@@ -81,8 +85,10 @@
   --bg-editor: rgba(6, 6, 12, 0.95);
   --bg-code: #06060c;
   --bg-input: #0c0c18;
+  --bg-card: #0c0c18;
   --border-color: rgba(40, 32, 56, 0.5);
   --border-strong: #302850;
+  --border-weak: rgba(40, 32, 56, 0.2);
   --text-primary: #dcd8e8;
   --text-secondary: #8880a0;
   --text-muted: #585078;

@@ -7,7 +7,9 @@ import EditorPanel from '@/components/EditorPanel';
 import Sidebar from '@/components/Sidebar';
 import WaveBackground from '@/components/WaveBackground';
 import SettingsPanel from '@/components/SettingsPanel';
+import { generateId } from '@/lib/auth-core';
 import type { AIModel, AIResponse, WorkspaceSession, ScriptFile } from '@/types';
+import { PanelSkeleton, CardSkeleton } from '@/components/LoadingSkeleton';
 
 const STORAGE_KEY_PLUGIN_CODE = 'coconut-plugin-code';
 const STORAGE_KEY_THEME = 'coconut-theme';
@@ -79,10 +81,12 @@ export default function DashboardPage() {
   const [workspaces, setWorkspaces] = useState<WorkspaceSession[]>([]);
   const [workspaceName, setWorkspaceName] = useState(DEFAULT_WORKSPACE);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [files, setFiles] = useState<ScriptFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | ''>('');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filesRef = useRef(files);
   const [activeTab, setActiveTab] = useState<TabId>('explorer');
@@ -93,6 +97,8 @@ export default function DashboardPage() {
   const [pluginCode, setPluginCode] = useState('');
   const [pluginConnected, setPluginConnected] = useState(false);
   const [pluginStatus, setPluginStatus] = useState('');
+  const [newFileName, setNewFileName] = useState('');
+  const [showNewFile, setShowNewFile] = useState(false);
   const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -105,7 +111,8 @@ export default function DashboardPage() {
     if (!pid) { router.replace('/projects'); return; }
     setActiveProjectId(pid);
     setActiveFileId(pid);
-    fetchCurrentUser(); fetchModels(); fetchWorkspaceList(pid);
+    Promise.all([fetchCurrentUser(), fetchModels(), fetchWorkspaceList(pid)])
+      .finally(() => setInitialLoading(false));
     const saved = localStorage.getItem(STORAGE_KEY_PLUGIN_CODE);
     if (saved) setPluginCodeAndPersist(saved);
   }, []);
@@ -236,14 +243,21 @@ export default function DashboardPage() {
 
   useEffect(() => { filesRef.current = files; }, [files]);
 
+  useEffect(() => {
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, []);
+
   function scheduleSave() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSaveStatus('saving');
     saveTimerRef.current = setTimeout(() => {
       const current = filesRef.current;
       fetch('/api/workspace/session', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workspace_name: workspaceName, metadata: { files: current } }),
-      }).catch(() => {});
+      })
+        .then(() => setSaveStatus('saved'))
+        .catch(() => setSaveStatus(''));
     }, 800);
   }
 
@@ -281,6 +295,23 @@ export default function DashboardPage() {
     } catch { setError('Unable to reach AI service.'); } finally { setIsGenerating(false); }
   }
 
+  function createFile() {
+    const name = newFileName.trim();
+    if (!name) return;
+    const newFile: ScriptFile = {
+      id: generateId(),
+      name: name.endsWith('.lua') ? name : name + '.lua',
+      content: '-- ' + name + '\n\n',
+      className: 'ModuleScript',
+      updatedAt: new Date().toISOString(),
+    };
+    setFiles((prev) => [...prev, newFile]);
+    setActiveFileId(newFile.id);
+    setNewFileName('');
+    setShowNewFile(false);
+    scheduleSave();
+  }
+
   function applyCodeFromChat(codeSnippet: string) {
     if (activeFileId) setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: codeSnippet, updatedAt: new Date().toISOString() } : f));
   }
@@ -294,7 +325,7 @@ export default function DashboardPage() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-2.5 h-7 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>Explorer</span>
-          <button onClick={() => router.push('/projects')} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>Projects</button>
+          <button onClick={() => router.push('/projects')} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }} aria-label="Back to projects">Projects</button>
         </div>
 
         {pluginCode.trim().length === 6 && (
@@ -315,9 +346,25 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+        <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>SCRIPTS</span>
+          <button onClick={() => { setShowNewFile(!showNewFile); setNewFileName(''); }} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }} aria-label="New file">+</button>
         </div>
+        {showNewFile && (
+          <div className="px-2 py-1 border-b flex gap-1" style={{ borderColor: 'var(--border-color)' }}>
+            <input
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') createFile(); if (e.key === 'Escape') { setShowNewFile(false); setNewFileName(''); } }}
+              placeholder="name.lua"
+              className="flex-1 text-[10px] outline-none px-1.5 py-0.5"
+              style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+              autoFocus
+              aria-label="New file name"
+            />
+            <button onClick={createFile} className="btn-neon text-[9px] px-1.5 py-0.5" aria-label="Create file">+</button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto py-0.5">
           {files.length === 0 ? (
             <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-muted)' }}>No files</p>
@@ -412,6 +459,18 @@ export default function DashboardPage() {
   }
 
   // ── Render ─────────────────────────────────────────────
+  if (initialLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg-page)' }}>
+        <div className="text-center">
+          <div className="animate-shimmer mx-auto mb-6 w-16 h-4" style={{ background: 'var(--border-color)', borderRadius: '4px' }} />
+          <div className="animate-shimmer mx-auto mb-3 w-48 h-3" style={{ background: 'var(--border-color)', borderRadius: '4px' }} />
+          <div className="animate-shimmer mx-auto w-32 h-3" style={{ background: 'var(--border-color)', borderRadius: '4px' }} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="h-screen flex flex-col" style={{ background: 'var(--bg-page)' }}>
@@ -475,12 +534,13 @@ export default function DashboardPage() {
 
         {/* Status Bar */}
         <footer className="flex items-center justify-between px-3 h-6 border-t text-[11px] flex-shrink-0 relative z-10 animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
-          <div className="flex items-center gap-3">
-            <span className="cursor-pointer" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('explorer')}>[.] Explorer</span>
-            <span className="cursor-pointer" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('chat')}>&lt;AI&gt; AI Chat</span>
-            <span className="cursor-pointer" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit' }} onClick={() => handleTabChange('settings')}>[=] Settings</span>
+          <div className="flex items-center gap-1">
+            <button className="border-0 cursor-pointer text-[11px]" style={{ color: activeTab === 'explorer' ? 'var(--accent)' : 'inherit', background: 'none' }} onClick={() => handleTabChange('explorer')} aria-label="Show explorer panel">[.] Explorer</button>
+            <button className="border-0 cursor-pointer text-[11px]" style={{ color: activeTab === 'chat' ? 'var(--accent)' : 'inherit', background: 'none' }} onClick={() => handleTabChange('chat')} aria-label="Show AI chat panel">{'<AI>'} AI Chat</button>
+            <button className="border-0 cursor-pointer text-[11px]" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit', background: 'none' }} onClick={() => handleTabChange('settings')} aria-label="Show settings panel">[=] Settings</button>
           </div>
           <div className="flex items-center gap-3">
+            {saveStatus && <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{saveStatus === 'saved' ? 'Saved' : 'Saving...'}</span>}
             {pluginCode && (
               <span style={{ color: pluginConnected ? 'var(--accent)' : 'var(--text-muted)' }}>
                 Studio {pluginConnected ? 'Connected' : pluginCode.trim().length === 6 ? 'Invalid' : ''}

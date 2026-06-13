@@ -12,18 +12,23 @@ export const GET = withAuth(async (request: NextRequest, context) => {
 });
 
 export const POST = withAuth(async (request: NextRequest, context) => {
-  const body = await request.json();
-  const workspaceName = body.workspace_name ?? DEFAULT_WORKSPACE;
+  try {
+    const body = await request.json();
+    const workspaceName = body.workspace_name ?? DEFAULT_WORKSPACE;
 
-  const session = await createOrUpdateWorkspaceSession(context.userId, workspaceName, {
-    status: body.status ?? 'active',
-    last_synced_at: new Date().toISOString(),
-    metadata: body.metadata ?? null,
-  });
+    const session = await createOrUpdateWorkspaceSession(context.userId, workspaceName, {
+      status: body.status ?? 'active',
+      last_synced_at: new Date().toISOString(),
+      metadata: body.metadata ?? null,
+    });
 
-  if (!session) {
-    return NextResponse.json({ success: false, error: 'Unable to save workspace session' }, { status: 500 });
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unable to save workspace session' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data: session }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error in POST /api/workspace/session:', error);
+    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true, data: session }, { status: 200 });
 });

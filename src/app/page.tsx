@@ -14,12 +14,14 @@ const features = [
 
 export default function HomePage() {
   const [signedIn, setSignedIn] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => { if (data?.success) setSignedIn(true); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setAuthLoading(false));
   }, []);
 
   return (

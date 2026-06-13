@@ -1,8 +1,14 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { randomUUID } from 'crypto';
 
+const JWT_SECRET_ENV = process.env.JWT_SECRET;
+if (!JWT_SECRET_ENV) {
+  console.error('FATAL: JWT_SECRET environment variable is not set');
+  if (process.env.NODE_ENV === 'production') process.exit(1);
+}
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'coconut-ai-dev-secret-min-32-chars-long!!'
+  JWT_SECRET_ENV || 'coconut-ai-dev-secret-min-32-chars-long!!'
 );
 
 export interface TokenPayload extends JWTPayload {
@@ -37,6 +43,5 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
 }
 
 export function generateId(): string {
-  const { randomUUID } = require('crypto');
   return randomUUID();
 }

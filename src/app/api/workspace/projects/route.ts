@@ -9,32 +9,42 @@ import {
 import type { NextRequest } from 'next/server';
 
 export const GET = withAuth(async (request: NextRequest, context) => {
-  const workspaceName = request.nextUrl.searchParams.get('workspace_name') ?? 'Coconut AI Workspace';
-  const projects = await listWorkspaceProjects(context.userId, workspaceName);
-  return NextResponse.json({ success: true, data: projects }, { status: 200 });
+  try {
+    const workspaceName = request.nextUrl.searchParams.get('workspace_name') ?? 'Coconut AI Workspace';
+    const projects = await listWorkspaceProjects(context.userId, workspaceName);
+    return NextResponse.json({ success: true, data: projects }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error in GET /api/workspace/projects:', error);
+    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+  }
 });
 
 export const POST = withAuth(async (request: NextRequest, context) => {
-  const body = await request.json();
-  const workspaceName = body.workspace_name ?? 'Coconut AI Workspace';
-  const name = body.name?.trim();
-  const description = body.description?.trim();
+  try {
+    const body = await request.json();
+    const workspaceName = body.workspace_name ?? 'Coconut AI Workspace';
+    const name = body.name?.trim();
+    const description = body.description?.trim();
 
-  if (!name) {
-    return NextResponse.json({ success: false, error: 'Project name is required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ success: false, error: 'Project name is required' }, { status: 400 });
+    }
+
+    const project = await createWorkspaceProject(context.userId, workspaceName, {
+      name,
+      description,
+      metadata: body.metadata ?? null,
+    });
+
+    if (!project) {
+      return NextResponse.json({ success: false, error: 'Unable to create workspace project' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data: project }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error in POST /api/workspace/projects:', error);
+    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
-
-  const project = await createWorkspaceProject(context.userId, workspaceName, {
-    name,
-    description,
-    metadata: body.metadata ?? null,
-  });
-
-  if (!project) {
-    return NextResponse.json({ success: false, error: 'Unable to create workspace project' }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true, data: project }, { status: 200 });
 });
 
 export const PATCH = withAuth(async (request: NextRequest, context) => {

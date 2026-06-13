@@ -27,7 +27,10 @@ export function withAuth(
       // Admin API key bypass
       if (opts?.allowAdminKey) {
         const adminKey = request.headers.get('x-admin-key');
-        if (adminKey && adminKey === process.env.ADMIN_API_KEY) {
+        const configuredKey = process.env.ADMIN_API_KEY;
+        if (!configuredKey) {
+          console.warn('ADMIN_API_KEY not configured — admin key bypass disabled');
+        } else if (adminKey && adminKey === configuredKey) {
           return handler(request, {
             userId: 'admin-bot',
             role: 'admin',
