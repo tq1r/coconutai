@@ -23,6 +23,7 @@ export default function ProjectsPage() {
   const [toastType, setToastType] = useState<'error' | 'success'>('error');
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   function toast(msg: string, type: 'error' | 'success') {
@@ -222,7 +223,7 @@ export default function ProjectsPage() {
                       <span className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{project.name}</span>
                     </div>
                     <button
-                      onClick={(e) => { e.stopPropagation(); deleteProject(project.id); }}
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(project.id); }}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] border-0 cursor-pointer px-1.5 py-0.5"
                       style={{ color: 'var(--text-muted)' }}
                       title="Delete"
@@ -235,6 +236,18 @@ export default function ProjectsPage() {
           )}
         </div>
       </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setConfirmDelete(null)}>
+          <div className="p-4 rounded" style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-color)', minWidth: '200px' }} onClick={(e) => e.stopPropagation()}>
+            <p className="text-[11px] mb-3" style={{ color: 'var(--text-secondary)' }}>Delete this project?</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmDelete(null)} className="px-2.5 py-1 text-[10px] border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)', borderRadius: '4px', background: 'transparent' }}>Cancel</button>
+              <button onClick={() => { deleteProject(confirmDelete); setConfirmDelete(null); }} className="px-2.5 py-1 text-[10px] border-0 cursor-pointer" style={{ background: 'var(--danger)', color: '#fff', borderRadius: '4px' }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <WaveBackground />
       <footer className="flex items-center justify-between px-4 h-6 border-t text-[10px] flex-shrink-0 relative z-10" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
