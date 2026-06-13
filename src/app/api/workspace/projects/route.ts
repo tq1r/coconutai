@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth-utils';
+import { apiError, apiSuccess, ErrorCodes } from '@/lib/error-codes';
 import {
   createWorkspaceProject,
   deleteWorkspaceProject,
@@ -12,10 +13,10 @@ export const GET = withAuth(async (request: NextRequest, context) => {
   try {
     const workspaceName = request.nextUrl.searchParams.get('workspace_name') ?? 'Coconut AI Workspace';
     const projects = await listWorkspaceProjects(context.userId, workspaceName);
-    return NextResponse.json({ success: true, data: projects }, { status: 200 });
-  } catch (error: any) {
+    return NextResponse.json(apiSuccess(projects), { status: 200 });
+  } catch (error: unknown) {
     console.error('Error in GET /api/workspace/projects:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json(apiError(ErrorCodes.SERVER_INTERNAL_ERROR), { status: 500 });
   }
 });
 
@@ -27,7 +28,7 @@ export const POST = withAuth(async (request: NextRequest, context) => {
     const description = body.description?.trim();
 
     if (!name) {
-      return NextResponse.json({ success: false, error: 'Project name is required' }, { status: 400 });
+      return NextResponse.json(apiError(ErrorCodes.VALIDATION_MISSING_FIELD), { status: 400 });
     }
 
     const project = await createWorkspaceProject(context.userId, workspaceName, {
@@ -37,13 +38,13 @@ export const POST = withAuth(async (request: NextRequest, context) => {
     });
 
     if (!project) {
-      return NextResponse.json({ success: false, error: 'Unable to create workspace project' }, { status: 500 });
+      return NextResponse.json(apiError(ErrorCodes.SERVER_INTERNAL_ERROR), { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data: project }, { status: 200 });
-  } catch (error: any) {
+    return NextResponse.json(apiSuccess(project), { status: 200 });
+  } catch (error: unknown) {
     console.error('Error in POST /api/workspace/projects:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json(apiError(ErrorCodes.SERVER_INTERNAL_ERROR), { status: 500 });
   }
 });
 
@@ -52,7 +53,7 @@ export const PATCH = withAuth(async (request: NextRequest, context) => {
   const projectId = body.project_id?.trim();
 
   if (!projectId) {
-    return NextResponse.json({ success: false, error: 'Project ID is required' }, { status: 400 });
+    return NextResponse.json(apiError(ErrorCodes.VALIDATION_MISSING_FIELD), { status: 400 });
   }
 
   const project = await updateWorkspaceProject(context.userId, projectId, {
@@ -62,23 +63,23 @@ export const PATCH = withAuth(async (request: NextRequest, context) => {
   });
 
   if (!project) {
-    return NextResponse.json({ success: false, error: 'Unable to update workspace project' }, { status: 500 });
+    return NextResponse.json(apiError(ErrorCodes.SERVER_INTERNAL_ERROR), { status: 500 });
   }
 
-  return NextResponse.json({ success: true, data: project }, { status: 200 });
+  return NextResponse.json(apiSuccess(project), { status: 200 });
 });
 
 export const DELETE = withAuth(async (request: NextRequest, context) => {
   const projectId = request.nextUrl.searchParams.get('project_id')?.trim();
 
   if (!projectId) {
-    return NextResponse.json({ success: false, error: 'Project ID is required' }, { status: 400 });
+    return NextResponse.json(apiError(ErrorCodes.VALIDATION_MISSING_FIELD), { status: 400 });
   }
 
   const deleted = await deleteWorkspaceProject(context.userId, projectId);
   if (!deleted) {
-    return NextResponse.json({ success: false, error: 'Unable to delete workspace project' }, { status: 500 });
+    return NextResponse.json(apiError(ErrorCodes.SERVER_INTERNAL_ERROR), { status: 500 });
   }
 
-  return NextResponse.json({ success: true, data: { project_id: projectId } }, { status: 200 });
+  return NextResponse.json(apiSuccess({ project_id: projectId }), { status: 200 });
 });

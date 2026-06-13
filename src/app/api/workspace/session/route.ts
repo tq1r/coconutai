@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth-utils';
+import { apiError, apiSuccess, ErrorCodes } from '@/lib/error-codes';
 import { getWorkspaceSession, createOrUpdateWorkspaceSession } from '@/lib/workspace';
 import type { NextRequest } from 'next/server';
 
@@ -8,7 +9,7 @@ const DEFAULT_WORKSPACE = 'Coconut AI Workspace';
 export const GET = withAuth(async (request: NextRequest, context) => {
   const workspaceName = request.nextUrl.searchParams.get('workspace_name') ?? DEFAULT_WORKSPACE;
   const session = await getWorkspaceSession(context.userId, workspaceName);
-  return NextResponse.json({ success: true, data: session }, { status: 200 });
+  return NextResponse.json(apiSuccess(session), { status: 200 });
 });
 
 export const POST = withAuth(async (request: NextRequest, context) => {
@@ -23,12 +24,12 @@ export const POST = withAuth(async (request: NextRequest, context) => {
     });
 
     if (!session) {
-      return NextResponse.json({ success: false, error: 'Unable to save workspace session' }, { status: 500 });
+      return NextResponse.json(apiError(ErrorCodes.SERVER_INTERNAL_ERROR), { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data: session }, { status: 200 });
-  } catch (error: any) {
+    return NextResponse.json(apiSuccess(session), { status: 200 });
+  } catch (error: unknown) {
     console.error('Error in POST /api/workspace/session:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json(apiError(ErrorCodes.SERVER_INTERNAL_ERROR), { status: 500 });
   }
 });

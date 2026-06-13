@@ -72,6 +72,12 @@ function Toast({ message, type, onClose }: { message: string; type: 'error' | 's
 export default function DashboardPage() {
   const router = useRouter();
   const [userName, setUserName] = useState('Creator');
+
+  function checkAuth(data: { code?: string; error?: string }) {
+    if (data?.code === 'AUTH_TOKEN_EXPIRED' || data?.code === 'AUTH_TOKEN_MISSING') {
+      router.push('/auth/login');
+    }
+  }
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
   const [models, setModels] = useState<AIModel[]>([]);
@@ -179,6 +185,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/auth/me');
       const data = await res.json();
+      checkAuth(data);
       if (data?.success && data.user) {
         setUserName(data.user.display_name ?? data.user.email ?? 'Creator');
         setUserEmail(data.user.email || '');
