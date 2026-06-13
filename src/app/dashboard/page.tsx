@@ -596,6 +596,13 @@ export default function DashboardPage() {
         <div className="flex-1 overflow-y-auto" style={{ padding: '8px 10px' }}>
           {chatHistory.length === 0 ? (
             <div className="flex flex-col" style={{ padding: '16px 0' }}>
+              {!pluginCode && (
+                <div className="mx-2 mb-3 p-2 border text-center animate-fade-in" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)', borderRadius: '4px' }}>
+                  <p className="text-[10px]" style={{ color: 'var(--accent)' }}>Connect to Studio</p>
+                  <p className="text-[9px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Enter the 6-char code from the plugin in Settings</p>
+                  <button onClick={() => handleTabChange('settings')} className="btn-neon text-[9px] px-2 py-0.5 mt-1.5">Open Settings</button>
+                </div>
+              )}
               <p className="text-[11px] font-medium mb-3 text-center" style={{ color: 'var(--text-secondary)' }}>Ask AI to generate code</p>
               <div className="flex flex-col gap-1.5 px-2">
                 {['Sword attack animation with raycast hit detection', 'Inventory system with hotbar UI', 'Part sliding physics system', 'Leaderboard GUI with animated scores', 'NPC patrol path with waypoints'].map((suggestion) => (
