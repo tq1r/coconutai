@@ -302,7 +302,8 @@ export default function DashboardPage() {
       id: generateId(),
       name: name.endsWith('.lua') ? name : name + '.lua',
       content: '-- ' + name + '\n\n',
-      className: 'ModuleScript',
+      language: 'luau',
+      projectId: activeProjectId || '',
       updatedAt: new Date().toISOString(),
     };
     setFiles((prev) => [...prev, newFile]);
