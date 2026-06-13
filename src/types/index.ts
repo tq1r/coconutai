@@ -126,3 +126,15 @@ export interface ScriptFile {
   projectId: string;
   updatedAt: string;
 }
+
+export type LibraryItemType = 'model' | 'animation' | 'gamepass' | 'ui' | 'script' | 'vfx';
+
+export interface LibraryItem {
+  id: string;
+  session_code: string;
+  type: LibraryItemType;
+  name: string;
+  description: string;
+  content: string;
+  created_at: string;
+}

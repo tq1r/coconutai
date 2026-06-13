@@ -1,6 +1,6 @@
 --[[
 	Coconut AI Studio Plugin
-	Version 2.0.0
+	Version 2.1.0
 
 	Installation: Save to %localappdata%/Roblox/Plugins/CoconutAI.lua
 
@@ -9,6 +9,7 @@
 	- Automatic script injection into your project
 	- Output console mirroring
 	- Session management with auto-reconnect
+	- Asset library: stores AI-generated scripts, models, UI, animations, etc.
 	- Professional UI with dark/light mode
 --]]
 
@@ -20,7 +21,7 @@ local plugin = Plugin()
 local toolbar = plugin:CreateToolbar(PLUGIN_NAME)
 local toggleBtn = toolbar:CreateButton(PLUGIN_NAME, "Toggle Coconut AI panel", "")
 
--- ── Colors ─────────────────────────────────────────────
+-- Colors
 local C = {
 	primary = Color3.fromRGB(20, 184, 166),
 	primaryDark = Color3.fromRGB(13, 148, 136),
@@ -40,17 +41,35 @@ local C = {
 	border = Color3.fromRGB(230, 225, 220),
 	borderDark = Color3.fromRGB(55, 58, 64),
 	codeBg = Color3.fromRGB(245, 247, 250),
+	-- Type colors
+	typeModel = Color3.fromRGB(99, 102, 241),
+	typeAnim = Color3.fromRGB(236, 72, 153),
+	typeGP = Color3.fromRGB(251, 191, 36),
+	typeUI = Color3.fromRGB(52, 211, 153),
+	typeScript = Color3.fromRGB(56, 189, 248),
+	typeVFX = Color3.fromRGB(168, 85, 247),
 }
 
--- ── State ──────────────────────────────────────────────
+local LIBRARY_TYPES = {
+	model = { label = "Model", color = C.typeModel },
+	animation = { label = "Animation", color = C.typeAnim },
+	gamepass = { label = "Game Pass", color = C.typeGP },
+	ui = { label = "UI", color = C.typeUI },
+	script = { label = "Script", color = C.typeScript },
+	vfx = { label = "VFX", color = C.typeVFX },
+}
+
+-- State
 local state = {
 	sessionCode = nil,
 	isPolling = false,
 	outputLines = {},
+	libraryItems = {},
 	isDark = false,
+	activeTab = "output",
 }
 
--- ── Helpers ────────────────────────────────────────────
+-- Helpers
 local function ui(class, props, children)
 	local obj = Instance.new(class)
 	for k, v in pairs(props or {}) do
@@ -99,6 +118,7 @@ local function applyTheme()
 	codeLabel.TextColor3 = C.primary
 	codeLabel.BackgroundColor3 = if state.isDark then C.bgDark else C.codeBg
 	codeLabelStroke.Color = C.primary
+	tabBar.BackgroundColor3 = surf
 	outputHeader.BackgroundColor3 = surf
 	outputStroke.Color = bdr
 	outputLabel.TextColor3 = txt
@@ -107,19 +127,22 @@ local function applyTheme()
 	for _, line in ipairs(state.outputLines) do
 		line.TextColor3 = line:GetAttribute("color") or tSec
 	end
+	libraryFrame.BackgroundColor3 = surf
+	libraryFrameStroke.Color = bdr
+	libEmptyText.TextColor3 = tSec
 end
 
--- ── Widget Setup ───────────────────────────────────────
+-- Widget Setup
 local dockInfo = DockWidgetPluginGuiInfo.new(
 	Enum.InitialDockState.Float,
 	false, false,
-	360, 520,
-	360, 600
+	360, 560,
+	360, 640
 )
 local widget = plugin:CreateDockWidgetPluginGui(PLUGIN_NAME, dockInfo)
 widget.Title = "Coconut AI"
 
--- ── Build UI ───────────────────────────────────────────
+-- Build UI
 local mainFrame = ui("Frame", {
 	BackgroundColor3 = C.bg,
 	BorderSizePixel = 0,
@@ -157,7 +180,7 @@ local headerFrame = ui("Frame", {
 	ui("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -200, 0, 0) }),
 	local versionLabel = ui("TextLabel", {
 		BackgroundTransparency = 1,
-		Text = "v2.0",
+		Text = "v2.1",
 		TextSize = 10,
 		Font = Enum.Font.GothamMedium,
 		TextColor3 = C.textMuted,
@@ -267,29 +290,83 @@ local disconnectBtn = ui("TextButton", {
 }, { corner(8) })
 disconnectBtn.Parent = sessionFrame
 
--- Output header
-local outputHeader = ui("Frame", {
+-- Tab bar
+local tabBar = ui("Frame", {
 	BackgroundColor3 = C.surface,
 	BorderSizePixel = 0,
 	Size = UDim2.new(1, 0, 0, 28),
 }, {
+	ui("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 0),
+	}),
+})
+
+local function makeTab(name, id)
+	local btn = ui("TextButton", {
+		BackgroundTransparency = 1,
+		Text = name,
+		TextSize = 10,
+		Font = Enum.Font.GothamSemibold,
+		TextColor3 = C.textMuted,
+		Size = UDim2.new(0, 0, 0, 28),
+		AutomaticSize = Enum.AutomaticSize.X,
+		AutoButtonColor = false,
+		BorderSizePixel = 0,
+	})
+	btn.Parent = tabBar
+	-- indicator
+	local ind = ui("Frame", {
+		BackgroundColor3 = C.primary,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, 2),
+		Position = UDim2.new(0, 0, 1, -2),
+		Visible = state.activeTab == id,
+	})
+	ind.Parent = btn
+
+	btn.MouseButton1Click:Connect(function()
+		state.activeTab = id
+		-- Update all indicators
+		for _, child in ipairs(tabBar:GetChildren()) do
+			if child:IsA("TextButton") then
+				local indicator = child:FindFirstChildOfClass("Frame")
+				if indicator then
+					indicator.Visible = (child == btn)
+				end
+				child.TextColor3 = (child == btn) and C.primary or C.textMuted
+			end
+		end
+		outputContainer.Visible = (id == "output")
+		libraryFrame.Visible = (id == "library")
+		if id == "library" and state.sessionCode then
+			fetchLibrary()
+		end
+	end)
+
+	return btn
+end
+
+local tabSpacer = ui("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -140, 0, 0) })
+tabSpacer.Parent = tabBar
+
+local outputTab = makeTab("OUTPUT", "output")
+local libTab = makeTab("LIBRARY", "library")
+
+-- Output header
+local outputHeader = ui("Frame", {
+	BackgroundColor3 = C.surface,
+	BorderSizePixel = 0,
+	Size = UDim2.new(1, 0, 0, 24),
+}, {
 	corner(8), stroke(),
-	padding(10, 6, 0, 0),
+	padding(8, 6, 0, 0),
 	ui("UIListLayout", {
 		FillDirection = Enum.FillDirection.Horizontal,
 		VerticalAlignment = Enum.VerticalAlignment.Center,
 	}),
-	ui("TextLabel", {
-		BackgroundTransparency = 1,
-		Text = "OUTPUT",
-		TextSize = 9,
-		Font = Enum.Font.GothamBold,
-		TextColor3 = C.textMuted,
-		LetterSpacing = 2,
-		Size = UDim2.new(0, 0, 0, 12),
-		AutomaticSize = Enum.AutomaticSize.X,
-	}),
-	ui("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -130, 0, 0) }),
+	ui("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -70, 0, 0) }),
 	local clearOutputBtn = ui("TextButton", {
 		BackgroundTransparency = 1,
 		Text = "Clear",
@@ -300,11 +377,23 @@ local outputHeader = ui("Frame", {
 	}),
 })
 
+local outputLabel = ui("TextLabel", {
+	BackgroundTransparency = 1,
+	Text = "OUTPUT",
+	TextSize = 9,
+	Font = Enum.Font.GothamBold,
+	TextColor3 = C.textMuted,
+	LetterSpacing = 2,
+	Size = UDim2.new(0, 0, 0, 12),
+	AutomaticSize = Enum.AutomaticSize.X,
+})
+outputLabel.Parent = outputHeader
+
 -- Output container
 local outputContainer = ui("ScrollingFrame", {
 	BackgroundColor3 = C.surface,
 	BorderSizePixel = 0,
-	Size = UDim2.new(1, 0, 1, -210),
+	Size = UDim2.new(1, 0, 1, -240),
 	AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	ScrollBarThickness = 6,
 	ScrollBarImageColor3 = C.border,
@@ -319,6 +408,44 @@ local outputLayout = ui("UIListLayout", {
 })
 outputLayout.Parent = outputContainer
 
+-- Library frame
+local function createLibraryUI()
+	local frame = ui("ScrollingFrame", {
+		BackgroundColor3 = C.surface,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 1, -240),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = C.border,
+		ElasticBehavior = Enum.ScrollingFrameElasticBehavior.Never,
+		Visible = false,
+	}, {
+		corner(10), stroke(),
+	})
+
+	local layout = ui("UIListLayout", {
+		Padding = UDim.new(0, 4),
+		FillDirection = Enum.FillDirection.Vertical,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+	})
+	layout.Parent = frame
+
+	local emptyText = ui("TextLabel", {
+		BackgroundTransparency = 1,
+		Text = "No saved items. AI-generated assets will appear here.",
+		TextSize = 11,
+		Font = Enum.Font.Gotham,
+		TextColor3 = C.textSec,
+		Size = UDim2.new(1, -20, 0, 40),
+		TextWrapped = true,
+	})
+	emptyText.Parent = frame
+
+	return frame, layout, emptyText
+end
+
+local libraryFrame, libraryLayout, libEmptyText = createLibraryUI()
+
 -- Assembly
 local bodyLayout = ui("UIListLayout", { Padding = UDim.new(0, 6) })
 bodyLayout.Parent = mainFrame
@@ -327,11 +454,13 @@ ui("UIPadding", { PaddingTop = UDim.new(0, 6), PaddingLeft = UDim.new(0, 10), Pa
 headerFrame.Parent = mainFrame
 statusFrame.Parent = mainFrame
 sessionFrame.Parent = mainFrame
+tabBar.Parent = mainFrame
 outputHeader.Parent = mainFrame
 outputContainer.Parent = mainFrame
+libraryFrame.Parent = mainFrame
 widget.Content = mainFrame
 
--- ── Logging ────────────────────────────────────────────
+-- Logging
 local function addLog(text, color, isBold, timestamp)
 	local timeStr = if timestamp then os.date("%H:%M:%S") else ""
 	local prefix = if timeStr ~= "" then "[" .. timeStr .. "] " else ""
@@ -362,7 +491,163 @@ local function setStatus(text, color, dotColor)
 	statusDot.BackgroundColor3 = dotColor or C.textMuted
 end
 
--- ── Session Management ─────────────────────────────────
+-- Library API
+local function fetchLibrary()
+	if not state.sessionCode then return end
+	local ok, result = pcall(function()
+		local http = game:GetService("HttpService")
+		local resp = http:GetAsync(API_BASE .. "/library?code=" .. http:UrlEncode(state.sessionCode))
+		return http:JSONDecode(resp)
+	end)
+	if not ok or not result or not result.success then return end
+
+	state.libraryItems = result.data or {}
+	-- Rebuild library UI
+	for _, child in ipairs(libraryFrame:GetChildren()) do
+		if child:IsA("Frame") or child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
+	ui("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6) }).Parent = libraryFrame
+
+	local items = state.libraryItems
+	if #items == 0 then
+		local empty = ui("TextLabel", {
+			BackgroundTransparency = 1,
+			Text = "No saved items. AI-generated assets will appear here.",
+			TextSize = 11,
+			Font = Enum.Font.Gotham,
+			TextColor3 = C.textSec,
+			Size = UDim2.new(1, -20, 0, 40),
+			TextWrapped = true,
+		})
+		empty.Parent = libraryFrame
+		return
+	end
+
+	-- Group by type
+	local grouped = {}
+	local typeOrder = { "model", "animation", "gamepass", "ui", "script", "vfx" }
+	for _, item in ipairs(items) do
+		local t = item.type or "script"
+		if not grouped[t] then grouped[t] = {} end
+		table.insert(grouped[t], item)
+	end
+
+	for _, t in ipairs(typeOrder) do
+		local group = grouped[t]
+		if group and #group > 0 then
+			-- Type header
+			local typeInfo = LIBRARY_TYPES[t] or { label = t, color = C.textMuted }
+			local header = ui("TextLabel", {
+				BackgroundTransparency = 1,
+				Text = typeInfo.label:upper(),
+				TextSize = 9,
+				Font = Enum.Font.GothamBold,
+				TextColor3 = typeInfo.color,
+				LetterSpacing = 2,
+				Size = UDim2.new(1, 0, 0, 18),
+				TextXAlignment = Enum.TextXAlignment.Left,
+			})
+			header.Parent = libraryFrame
+
+			for _, item in ipairs(group) do
+				local card = ui("Frame", {
+					BackgroundColor3 = if state.isDark then C.bgDark else C.codeBg,
+					BorderSizePixel = 0,
+					Size = UDim2.new(1, 0, 0, 36),
+				}, { corner(6) })
+				card.Parent = libraryFrame
+
+				ui("UIListLayout", {
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					Padding = UDim.new(0, 6),
+				}).Parent = card
+
+				-- Type badge
+				ui("Frame", {
+					BackgroundColor3 = typeInfo.color,
+					Size = UDim2.new(0, 36, 0, 20),
+					BorderSizePixel = 0,
+				}, {
+					corner(4),
+					ui("TextLabel", {
+						BackgroundTransparency = 1,
+						Text = t:sub(1, 4):upper(),
+						TextSize = 8,
+						Font = Enum.Font.GothamBold,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						Size = UDim2.new(1, 0, 1, 0),
+					}),
+				}).Parent = card
+
+				-- Name
+				ui("TextLabel", {
+					BackgroundTransparency = 1,
+					Text = item.name or "Untitled",
+					TextSize = 10,
+					Font = Enum.Font.GothamMedium,
+					TextColor3 = if state.isDark then C.textDark else C.text,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					Size = UDim2.new(0.5, -50, 0, 20),
+				}).Parent = card
+
+				-- Insert button
+				local insertBtn = ui("TextButton", {
+					BackgroundColor3 = C.primary,
+					Text = "Insert",
+					TextSize = 9,
+					Font = Enum.Font.GothamSemibold,
+					TextColor3 = Color3.fromRGB(255, 255, 255),
+					Size = UDim2.new(0, 50, 0, 22),
+					AutoButtonColor = false,
+				}, { corner(4) })
+				insertBtn.Parent = card
+				insertBtn.MouseButton1Click:Connect(function()
+					local s, err = pcall(function()
+						local fn, e = loadstring(item.content)
+						if not fn then error(e) end
+						return fn()
+					end)
+					if s then
+						addLog("OK Inserted: " .. item.name, C.success, true, true)
+					else
+						addLog("X Insert failed: " .. tostring(err), C.error, false, true)
+					end
+				end)
+			end
+		end
+	end
+end
+
+-- Save to library
+local function saveToLibrary(name, itemType, content, description)
+	if not state.sessionCode then return end
+	local ok, result = pcall(function()
+		local http = game:GetService("HttpService")
+		local body = http:JSONEncode({
+			session_code = state.sessionCode,
+			type = itemType,
+			name = name,
+			description = description or "",
+			content = content,
+		})
+		local resp = http:PostAsync(API_BASE .. "/library", body, Enum.HttpContentType.ApplicationJson)
+		return http:JSONDecode(resp)
+	end)
+	if ok and result and result.success then
+		addLog("OK Saved to library: " .. name, C.success, true, true)
+		if state.activeTab == "library" then
+			fetchLibrary()
+		end
+	else
+		local errMsg = if ok then (result and result.error or "unknown") else tostring(result)
+		addLog("X Save to library failed: " .. errMsg, C.error, false, true)
+	end
+end
+
+-- Session Management
 local function stopPolling()
 	state.isPolling = false
 	state.sessionCode = nil
@@ -372,7 +657,7 @@ local function stopPolling()
 	setStatus("Ready", C.textSec, C.textMuted)
 end
 
--- ── Explorer Tree ───────────────────────────────────────
+-- Explorer Tree
 local function getExplorerTree()
 	local function buildTree(instance, depth)
 		depth = depth or 0
@@ -452,14 +737,20 @@ local function startPolling(code)
 								addLog("X Failed to report explorer: " .. tostring(err), C.error, false, true)
 							end
 						else
+							local scriptName = cmd.name or ("Script " .. tostring(#state.libraryItems + 1))
+							local scriptType = cmd.type or "script"
+							local scriptContent = cmd.code or cmd
+
 							addLog("> Received script from web app", C.warning, false, true)
 							local s, err = pcall(function()
-								local fn, e = loadstring(cmd.code or cmd)
+								local fn, e = loadstring(scriptContent)
 								if not fn then error(e) end
 								return fn()
 							end)
 							if s then
 								addLog("OK Script executed successfully", C.success, true, true)
+								-- Auto-save to library
+								saveToLibrary(scriptName, scriptType, scriptContent, "Generated by Coconut AI")
 							else
 								addLog("X Script error: " .. tostring(err), C.error, false, true)
 							end
@@ -493,7 +784,7 @@ local function startPolling(code)
 	end)
 end
 
--- ── Button Handlers ────────────────────────────────────
+-- Button Handlers
 createBtn.MouseButton1Click:Connect(function()
 	addLog("Creating session...", C.textSec, false, true)
 	createBtn.Text = "Creating..."
@@ -547,7 +838,7 @@ toggleBtn.Click:Connect(function()
 	widget.Enabled = not widget.Enabled
 end)
 
--- ── Startup ────────────────────────────────────────────
-addLog("Coconut AI v2.0 loaded", C.primary, true)
+-- Startup
+addLog("Coconut AI v2.1 loaded", C.primary, true)
 addLog("Click 'Create Session' and enter the code in the web app to connect", C.textSec, false)
 setStatus("Ready", C.textSec, C.textMuted)

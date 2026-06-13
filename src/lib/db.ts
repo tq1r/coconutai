@@ -11,6 +11,7 @@ interface Database {
   workspace_projects: Record<string, any>;
   audit_logs: any[];
   plugin_sessions: Record<string, any>;
+  library_items: Record<string, any>;
 }
 
 const DEFAULT_DB: Database = {
@@ -25,6 +26,7 @@ const DEFAULT_DB: Database = {
   workspace_projects: {},
   audit_logs: [],
   plugin_sessions: {},
+  library_items: {},
 };
 
 async function getDb(): Promise<Database> {
@@ -173,4 +175,29 @@ export async function setPluginExplorerTree(code: string, tree: any) {
     db.plugin_sessions[code].explorer_tree_updated_at = now();
     await persist(db);
   }
+}
+
+// Library helpers
+export async function findLibraryItems(sessionCode: string) {
+  const db = await getDb();
+  return Object.values(db.library_items)
+    .filter((item: any) => item.session_code === sessionCode)
+    .sort((a: any, b: any) => b.created_at.localeCompare(a.created_at));
+}
+
+export async function findLibraryItem(id: string) {
+  const db = await getDb();
+  return db.library_items[id] || null;
+}
+
+export async function insertLibraryItem(item: any) {
+  const db = await getDb();
+  db.library_items[item.id] = item;
+  await persist(db);
+}
+
+export async function deleteLibraryItem(id: string) {
+  const db = await getDb();
+  delete db.library_items[id];
+  await persist(db);
 }

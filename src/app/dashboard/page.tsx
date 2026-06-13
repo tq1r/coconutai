@@ -268,9 +268,10 @@ export default function DashboardPage() {
       const activeCode = pluginCodeRef.current;
       if (activeCode.length === 6) {
         try {
+          const pushName = prompt.slice(0, 60).replace(/\n/g, ' ') || 'AI Generated';
           const pushRes = await fetch('/api/plugin/push', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: activeCode, type: 'script', script: aiResponse.output }),
+            body: JSON.stringify({ code: activeCode, type: 'script', name: pushName, script: aiResponse.output }),
           });
           const pushData = await pushRes.json();
           setPluginStatus(pushData.success ? 'Pushed to Studio' : 'Push failed');
