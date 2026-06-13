@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | ''>('');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filesRef = useRef(files);
+  const chatRef = useRef(chatHistory);
   const [activeTab, setActiveTab] = useState<TabId>('explorer');
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'error' | 'success'>('error');
@@ -137,7 +138,7 @@ export default function DashboardPage() {
         setSaveStatus('saving');
         fetch('/api/workspace/session', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ workspace_name: workspaceName, metadata: { files: filesRef.current } }),
+          body: JSON.stringify({ workspace_name: workspaceName, metadata: { files: filesRef.current, chat: chatRef.current } }),
         })
           .then(() => setSaveStatus('saved'))
           .catch(() => setSaveStatus(''));
@@ -217,6 +218,10 @@ export default function DashboardPage() {
         if (savedFiles.length > 0) {
           setFiles(savedFiles);
         }
+        const savedChat: ChatMessage[] = payload.data.metadata?.chat || [];
+        if (savedChat.length > 0) {
+          setChatHistory(savedChat);
+        }
         await loadProject(name, projectId);
         return;
       }
@@ -274,6 +279,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => { filesRef.current = files; }, [files]);
+  useEffect(() => { chatRef.current = chatHistory; }, [chatHistory]);
 
   useEffect(() => {
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
@@ -286,7 +292,7 @@ export default function DashboardPage() {
       const current = filesRef.current;
       fetch('/api/workspace/session', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspace_name: workspaceName, metadata: { files: current } }),
+        body: JSON.stringify({ workspace_name: workspaceName, metadata: { files: current, chat: chatRef.current } }),
       })
         .then(() => setSaveStatus('saved'))
         .catch(() => setSaveStatus(''));
