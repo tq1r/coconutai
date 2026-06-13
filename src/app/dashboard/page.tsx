@@ -7,7 +7,7 @@ import EditorPanel from '@/components/EditorPanel';
 import Sidebar from '@/components/Sidebar';
 import WaveBackground from '@/components/WaveBackground';
 import SettingsPanel from '@/components/SettingsPanel';
-import { generateId } from '@/lib/auth-core';
+import { generateId } from '@/lib/id-utils';
 import type { AIModel, AIResponse, WorkspaceSession, ScriptFile } from '@/types';
 import { PanelSkeleton, CardSkeleton } from '@/components/LoadingSkeleton';
 
