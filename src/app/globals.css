@@ -441,3 +441,29 @@ body { overflow: hidden; }
 .wave-svg-1 { animation: wave1 12s linear infinite; }
 .wave-svg-2 { animation: wave2 18s linear infinite; opacity: 0.5; }
 .wave-svg-3 { animation: wave3 24s linear infinite; opacity: 0.25; }
+
+/* ── View Transitions ───────────────────────────────────── */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root) {
+  animation: fadeOut 0.2s ease-out both;
+}
+::view-transition-new(root) {
+  animation: fadeIn 0.3s ease-out 0.1s both;
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Cross-browser page transition fallback */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
