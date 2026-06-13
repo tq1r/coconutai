@@ -109,6 +109,7 @@ export default function DashboardPage() {
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
   const pluginCodeRef = useRef(pluginCode);
+  const abortRef = useRef<AbortController | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const activeFile = files.find((f) => f.id === activeFileId);
@@ -308,16 +309,24 @@ export default function DashboardPage() {
 
   async function handleGenerate() {
     if (!prompt.trim()) { setError('Enter a prompt'); return; }
+    if (isGenerating) {
+      abortRef.current?.abort();
+      setIsGenerating(false);
+      return;
+    }
     setError(''); setIsGenerating(true);
     const userPrompt = prompt;
     setPrompt('');
     const userMsg: ChatMessage = { role: 'user', text: userPrompt };
     const assistantMsg: ChatMessage = { role: 'assistant', text: '' };
     setChatHistory((prev) => [...prev, userMsg, assistantMsg]);
+    const abortController = new AbortController();
+    abortRef.current = abortController;
     try {
       const res = await fetch('/api/ai/chat/stream', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: userPrompt, modelId: selectedModel, workspaceName, projectId: activeProjectId, projectName: activeFile?.name, sessionCode: pluginCode }),
+        signal: abortController.signal,
       });
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => ({ error: 'Stream failed' }));
@@ -329,15 +338,29 @@ export default function DashboardPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullOutput = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullOutput += decoder.decode(value, { stream: true });
-        setChatHistory((prev) => {
-          const next = [...prev];
-          next[next.length - 1] = { role: 'assistant', text: fullOutput };
-          return next;
-        });
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullOutput += decoder.decode(value, { stream: true });
+          setChatHistory((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { role: 'assistant', text: fullOutput };
+            return next;
+          });
+        }
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          setChatHistory((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { role: 'assistant', text: fullOutput + '\n-- [stopped]' };
+            return next;
+          });
+          setIsGenerating(false);
+          abortRef.current = null;
+          return;
+        }
+        throw err;
       }
       setChatHistory((prev) => {
         const next = [...prev];
@@ -357,7 +380,7 @@ export default function DashboardPage() {
         } catch { setPluginStatus('Push error'); }
         setTimeout(() => setPluginStatus(''), 4000);
       }
-    } catch { setChatHistory((prev) => [...prev.slice(0, -1)]); setError('Unable to reach AI service.'); } finally { setIsGenerating(false); }
+    } catch { setChatHistory((prev) => [...prev.slice(0, -1)]); setError('Unable to reach AI service.'); } finally { setIsGenerating(false); abortRef.current = null; }
   }
 
   function createFile() {
@@ -632,8 +655,8 @@ export default function DashboardPage() {
             className="w-full resize-none text-[11px] px-2.5 py-1.5"
             style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', lineHeight: 1.35, outline: 'none' }}
           />
-          <button onClick={handleGenerate} disabled={isGenerating} className="btn-neon w-full text-[11px] mt-1.5 px-3 py-1.5">
-            {isGenerating ? 'Generating...' : 'Generate'}
+          <button onClick={handleGenerate} className="btn-neon w-full text-[11px] mt-1.5 px-3 py-1.5" style={{ opacity: isGenerating ? 0.8 : 1 }}>
+            {isGenerating ? 'Stop' : 'Generate'}
           </button>
         </div>
       </div>
