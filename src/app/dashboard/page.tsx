@@ -106,6 +106,8 @@ export default function DashboardPage() {
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [fileFilter, setFileFilter] = useState('');
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [cursorLine, setCursorLine] = useState(1);
+  const [cursorCol, setCursorCol] = useState(1);
   const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -729,7 +731,7 @@ export default function DashboardPage() {
                 </div>
               )}
               <div className="flex-1 flex flex-col overflow-hidden border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
-                <EditorPanel code={pendingCode || code} onChange={handleCodeChange} activeFile={activeFile} />
+                <EditorPanel code={pendingCode || code} onChange={handleCodeChange} activeFile={activeFile} onCursorChange={(l, c) => { setCursorLine(l); setCursorCol(c); }} />
               </div>
             </div>
           </main>
@@ -761,7 +763,7 @@ export default function DashboardPage() {
             {userRole === 'admin' && <span style={{ color: 'var(--danger)' }}>Admin</span>}
             <span style={{ color: 'var(--text-secondary)' }}>{userName}</span>
             {pluginStatus && <span>{pluginStatus}</span>}
-            {activeProjectId && <><span style={{ color: 'var(--border-strong)' }}>|</span><span>Ln 1</span><span>Luau</span></>}
+            {activeProjectId && <><span style={{ color: 'var(--border-strong)' }}>|</span><span>Ln {cursorLine}, Col {cursorCol}</span><span>Luau</span></>}
           </div>
         </footer>
       </div>

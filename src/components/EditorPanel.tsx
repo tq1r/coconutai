@@ -91,9 +91,10 @@ interface EditorPanelProps {
   code: string;
   onChange: (value: string) => void;
   activeFile: ScriptFile | undefined;
+  onCursorChange?: (line: number, col: number) => void;
 }
 
-export default function EditorPanel({ code, onChange, activeFile }: EditorPanelProps) {
+export default function EditorPanel({ code, onChange, activeFile, onCursorChange }: EditorPanelProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
   const [lineCount, setLineCount] = useState(1);
@@ -107,6 +108,17 @@ export default function EditorPanel({ code, onChange, activeFile }: EditorPanelP
     },
     [onChange]
   );
+
+  const reportCursor = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta || !onCursorChange) return;
+    const val = ta.value;
+    const pos = ta.selectionStart;
+    const before = val.substring(0, pos);
+    const line = (before.match(/\n/g) || []).length + 1;
+    const col = pos - before.lastIndexOf('\n');
+    onCursorChange(line, col);
+  }, [onCursorChange]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab') {
@@ -156,6 +168,8 @@ export default function EditorPanel({ code, onChange, activeFile }: EditorPanelP
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onScroll={syncScroll}
+            onSelect={reportCursor}
+            onClick={reportCursor}
             spellCheck={false}
             className="absolute inset-0 outline-none resize-none border-none"
             style={{
