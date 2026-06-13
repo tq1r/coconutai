@@ -19,7 +19,7 @@ local POLL_INTERVAL = 2
 
 local plugin = Plugin()
 local toolbar = plugin:CreateToolbar(PLUGIN_NAME)
-local toggleBtn = toolbar:CreateButton(PLUGIN_NAME, "Toggle Coconut AI panel", "")
+local toggleBtn = toolbar:CreateButton(PLUGIN_NAME, "Toggle Coconut AI panel", "rbxasset://textures/Plugin.png")
 
 -- Colors
 local C = {
