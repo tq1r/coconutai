@@ -121,15 +121,37 @@ export default function EditorPanel({ code, onChange, activeFile, onCursorChange
   }, [onCursorChange]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const ta = e.currentTarget;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const val = ta.value;
     if (e.key === 'Tab') {
       e.preventDefault();
-      const ta = e.currentTarget;
-      const start = ta.selectionStart;
-      const end = ta.selectionEnd;
-      const val = ta.value;
       ta.value = val.substring(0, start) + '  ' + val.substring(end);
       ta.selectionStart = ta.selectionEnd = start + 2;
       onChange(ta.value);
+    } else if ((e.key === '(' || e.key === '[' || e.key === '{') && start === end) {
+      e.preventDefault();
+      const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}' };
+      ta.value = val.substring(0, start) + e.key + pairs[e.key] + val.substring(end);
+      ta.selectionStart = ta.selectionEnd = start + 1;
+      onChange(ta.value);
+    } else if ((e.key === '\'' || e.key === '"') && start === end) {
+      e.preventDefault();
+      ta.value = val.substring(0, start) + e.key + e.key + val.substring(end);
+      ta.selectionStart = ta.selectionEnd = start + 1;
+      onChange(ta.value);
+    } else if (e.key === 'Enter' && start === end) {
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      const lineBefore = val.substring(lineStart, start);
+      const indent = lineBefore.match(/^\s*/)?.[0] || '';
+      if (/[{(\[]\s*$/.test(lineBefore)) {
+        e.preventDefault();
+        const extra = '  ';
+        ta.value = val.substring(0, start) + '\n' + indent + extra + '\n' + indent + val.substring(end);
+        ta.selectionStart = ta.selectionEnd = start + indent.length + extra.length + 1;
+        onChange(ta.value);
+      }
     }
   }, [onChange]);
 
