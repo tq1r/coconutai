@@ -787,7 +787,7 @@ export default function DashboardPage() {
             {userRole === 'admin' && <span style={{ color: 'var(--danger)' }}>Admin</span>}
             <span style={{ color: 'var(--text-secondary)' }}>{userName}</span>
             {pluginStatus && <span>{pluginStatus}</span>}
-            {activeProjectId && <><span style={{ color: 'var(--border-strong)' }}>|</span><span>Ln {cursorLine}, Col {cursorCol}</span><span>Luau</span></>}
+            {activeProjectId && <><span style={{ color: 'var(--border-strong)' }}>|</span><span>Ln {cursorLine}, Col {cursorCol}</span><span style={{ color: 'var(--text-muted)' }}>{code.split('\n').length} lines</span><span>Luau</span></>}
           </div>
         </footer>
       </div>
