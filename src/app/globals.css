@@ -467,3 +467,6 @@ body { overflow: hidden; }
   transform: translateY(0);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
+/* Hide scrollbar but remain functional */
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }

@@ -86,6 +86,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [files, setFiles] = useState<ScriptFile[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [openFileIds, setOpenFileIds] = useState<string[]>([]);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | ''>('');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filesRef = useRef(files);
@@ -114,6 +115,7 @@ export default function DashboardPage() {
     if (!pid) { router.replace('/projects'); return; }
     setActiveProjectId(pid);
     setActiveFileId(pid);
+    setOpenFileIds([pid]);
     Promise.all([fetchCurrentUser(), fetchModels(), fetchWorkspaceList(pid)])
       .finally(() => setInitialLoading(false));
     const saved = localStorage.getItem(STORAGE_KEY_PLUGIN_CODE);
@@ -344,9 +346,10 @@ export default function DashboardPage() {
   function deleteFile(id: string) {
     setFiles((prev) => prev.filter((f) => f.id !== id));
     if (activeFileId === id) {
-      const remaining = files.filter((f) => f.id !== id);
-      setActiveFileId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+      const remaining = openFileIds.filter((fid) => fid !== id);
+      setActiveFileId(remaining.length > 0 ? remaining[remaining.length - 1] : null);
     }
+    setOpenFileIds((prev) => prev.filter((fid) => fid !== id));
     scheduleSave();
   }
 
@@ -444,7 +447,7 @@ export default function DashboardPage() {
               <div key={file.id} className="group flex items-center px-3 py-1 text-[11px] transition-all cursor-pointer" style={{
                 background: activeFileId === file.id ? 'var(--accent-soft)' : 'transparent',
                 color: activeFileId === file.id ? 'var(--accent)' : 'var(--text-secondary)',
-              }} onClick={() => { if (renamingFileId !== file.id) setActiveFileId(file.id); }}>
+              }} onClick={() => { if (renamingFileId !== file.id) { setOpenFileIds((prev) => prev.includes(file.id) ? prev : [...prev, file.id]); setActiveFileId(file.id); } }}>
                 <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>L</span>
                 {renamingFileId === file.id ? (
                   <input
@@ -596,7 +599,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 px-2.5 h-7 flex-shrink-0 border-b animate-fade-in" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
               <button onClick={() => router.push('/projects')} className="border-0 cursor-pointer font-medium px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
               <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>/</span>
-              <span className="font-medium truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{activeFile?.name || 'untitled'}</span>
               {pendingCode && <span className="text-[9px] px-1 py-0.5 rounded" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Preview</span>}
               <div className="flex-1" />
               <select value={workspaceName} onChange={(e) => {
@@ -612,6 +615,24 @@ export default function DashboardPage() {
                   Studio
                 </span>
               )}
+            </div>
+
+            {/* File Tabs */}
+            <div className="flex items-stretch h-7 flex-shrink-0 overflow-x-auto border-b hide-scrollbar" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)' }}>
+              {openFileIds.length === 0 && <div className="flex items-center px-3 text-[10px]" style={{ color: 'var(--text-muted)' }}>No open files</div>}
+              {openFileIds.map((fid) => {
+                const f = files.find((f) => f.id === fid);
+                const isActive = activeFileId === fid;
+                return (
+                  <div key={fid} className="flex items-center gap-1.5 px-2.5 text-[10px] flex-shrink-0 cursor-pointer border-r" style={{ background: isActive ? 'var(--bg-editor)' : 'transparent', color: isActive ? 'var(--accent)' : 'var(--text-muted)', borderColor: 'var(--border-color)', borderTop: isActive ? '2px solid var(--accent)' : '2px solid transparent', minWidth: 0 }}
+                    onClick={() => setActiveFileId(fid)}
+                  >
+                    <span className="truncate max-w-[80px]">{f?.name || 'untitled'}</span>
+                    <button onClick={(e) => { e.stopPropagation(); setOpenFileIds((prev) => { const idx = prev.indexOf(fid); const next = prev.filter((id) => id !== fid); if (isActive && next.length > 0) setActiveFileId(next[Math.min(idx, next.length - 1)]); if (isActive && next.length === 0) setActiveFileId(null); return next; }); }}
+                      className="text-[9px] border-0 cursor-pointer opacity-50 hover:opacity-100 flex-shrink-0" style={{ color: 'inherit', background: 'none' }} aria-label="Close tab">x</button>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Code Editor */}
