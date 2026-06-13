@@ -61,7 +61,7 @@ function TreeView({ items, depth = 0 }: { items: TreeNode[]; depth?: number }) {
 function Toast({ message, type, onClose }: { message: string; type: 'error' | 'success'; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, [onClose]);
   return (
-    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: type === 'error' ? 'var(--danger)' : 'var(--warning)', color: '#fff', borderRadius: '4px' }}>
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: type === 'error' ? 'var(--danger)' : 'var(--warning)', color: '#fff', borderRadius: '4px', boxShadow: type === 'error' ? '0 0 16px var(--danger-glow)' : '0 0 16px var(--warning-glow)' }}>
       {message}
     </div>
   );
@@ -378,11 +378,11 @@ export default function DashboardPage() {
                     <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
                     <div className="px-2.5 py-1.5" style={{ border: '1px solid var(--border-color)', borderRadius: '4px' }}>
                       <pre className="whitespace-pre-wrap font-sans text-[11px]" style={{ color: 'var(--text-primary)', lineHeight: 1.45 }}>{msg.text}</pre>
-                      {(msg.text.includes('function') || msg.text.includes('local ')) && (
-                        <button onClick={() => applyCodeFromChat(msg.text)} className="mt-2 text-[10px] text-white font-medium px-2.5 py-1 rounded border-0 cursor-pointer" style={{ background: 'var(--accent)' }}>
-                          Apply
-                        </button>
-                      )}
+                        {(msg.text.includes('function') || msg.text.includes('local ')) && (
+                          <button onClick={() => applyCodeFromChat(msg.text)} className="btn-neon mt-2 text-[10px] px-2.5 py-1">
+                            Apply
+                          </button>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -393,7 +393,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="px-3 py-1.5 border-t flex-shrink-0" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-surface-solid)' }}>
-          {error && <p className="text-[10px] mb-1" style={{ color: '#ef4444' }}>{error}</p>}
+          {error && <p className="text-[10px] mb-1" style={{ color: 'var(--danger)' }}>{error}</p>}
           <textarea
             rows={2}
             value={prompt}
@@ -403,7 +403,7 @@ export default function DashboardPage() {
             className="w-full resize-none text-[11px] px-2.5 py-1.5"
             style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', lineHeight: 1.35, outline: 'none' }}
           />
-          <button onClick={handleGenerate} disabled={isGenerating} className="w-full text-[11px] font-medium text-white mt-1.5 px-3 py-1.5 border-0 cursor-pointer" style={{ background: 'var(--accent)', borderRadius: '4px', opacity: isGenerating ? 0.6 : 1 }}>
+          <button onClick={handleGenerate} disabled={isGenerating} className="btn-neon w-full text-[11px] mt-1.5 px-3 py-1.5">
             {isGenerating ? 'Generating...' : 'Generate'}
           </button>
         </div>
@@ -450,8 +450,8 @@ export default function DashboardPage() {
                 {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
               </select>
               {pluginCode.trim().length === 6 && (
-                <span className="flex items-center gap-1 text-[10px]" style={{ color: pluginConnected ? 'var(--accent)' : '#fbbf24' }}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${pluginConnected ? 'animate-breathe' : ''}`} style={{ background: pluginConnected ? 'var(--accent)' : '#fbbf24' }} />
+                <span className="flex items-center gap-1 text-[10px]" style={{ color: pluginConnected ? 'var(--accent)' : 'var(--warning)' }}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${pluginConnected ? 'animate-breathe' : ''}`} style={{ background: pluginConnected ? 'var(--accent)' : 'var(--warning)' }} />
                   Studio
                 </span>
               )}
@@ -486,8 +486,8 @@ export default function DashboardPage() {
                 Studio {pluginConnected ? 'Connected' : pluginCode.trim().length === 6 ? 'Invalid' : ''}
               </span>
             )}
-            {userRole === 'premium' && <span style={{ color: '#fbbf24' }}>Premium</span>}
-            {userRole === 'admin' && <span style={{ color: '#ef4444' }}>Admin</span>}
+            {userRole === 'premium' && <span style={{ color: 'var(--warning)' }}>Premium</span>}
+            {userRole === 'admin' && <span style={{ color: 'var(--danger)' }}>Admin</span>}
             <span style={{ color: 'var(--text-secondary)' }}>{userName}</span>
             {pluginStatus && <span>{pluginStatus}</span>}
             {activeProjectId && <><span style={{ color: 'var(--border-strong)' }}>|</span><span>Ln 1</span><span>Luau</span></>}

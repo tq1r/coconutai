@@ -27,7 +27,7 @@ export default function ThemePicker() {
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(!open)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
-        <span className="w-2 h-2 rounded-full" style={{ background: theme === 'coconut' ? '#d97706' : theme === 'midnight' ? '#3b82f6' : '#a855f7' }} />
+        <span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
         {current?.label}
       </button>
       {open && (
@@ -42,7 +42,7 @@ export default function ThemePicker() {
                 color: theme === t.id ? 'var(--accent)' : 'var(--text-secondary)',
               }}
             >
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: t.id === 'coconut' ? '#d97706' : t.id === 'midnight' ? '#3b82f6' : '#a855f7' }} />
+              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: 'var(--accent)' }} />
               <span className="font-medium">{t.label}</span>
               <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{t.desc}</span>
             </button>

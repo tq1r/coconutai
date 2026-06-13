@@ -112,7 +112,7 @@ export default function ProjectsPage() {
   function Toast() {
     if (!toastMsg) return null;
     return (
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: toastType === 'error' ? 'var(--danger)' : 'var(--warning)', color: '#fff', borderRadius: '4px' }}>
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 text-sm font-medium shadow-xl animate-float-up" style={{ background: toastType === 'error' ? 'var(--danger)' : 'var(--warning)', color: '#fff', borderRadius: '4px', boxShadow: toastType === 'error' ? '0 0 16px var(--danger-glow)' : '0 0 16px var(--warning-glow)' }}>
         {toastMsg}
       </div>
     );
@@ -135,8 +135,8 @@ export default function ProjectsPage() {
             {workspaces.map((w) => <option key={w.id} value={w.workspace_name}>{w.workspace_name}</option>)}
           </select>
           <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            {userRole === 'premium' && <span style={{ color: '#fbbf24' }}>Premium</span>}
-            {userRole === 'admin' && <span style={{ color: '#ef4444' }}>Admin</span>}
+            {userRole === 'premium' && <span style={{ color: 'var(--warning)' }}>Premium</span>}
+            {userRole === 'admin' && <span style={{ color: 'var(--danger)' }}>Admin</span>}
             <div className="relative" ref={menuRef}>
               <button onClick={() => setShowMenu(!showMenu)} className="border-0 cursor-pointer text-[11px]" style={{ color: 'var(--text-secondary)', background: 'none' }}>{userEmail || userName}</button>
               {showMenu && (
@@ -161,8 +161,7 @@ export default function ProjectsPage() {
             </div>
             <button
               onClick={() => setShowNewInput(!showNewInput)}
-              className="text-[11px] font-medium px-3 py-1.5 border-0 cursor-pointer"
-              style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px' }}
+              className="btn-neon text-[11px] font-medium px-3 py-1.5"
             >+ New</button>
           </div>
 
@@ -178,7 +177,7 @@ export default function ProjectsPage() {
                 autoFocus
               />
               <div className="flex gap-2 mt-2">
-                <button onClick={createProject} disabled={creating} className="px-3 py-1.5 text-[11px] font-medium border-0 cursor-pointer" style={{ background: 'var(--accent)', color: '#fff', borderRadius: '4px', opacity: creating ? 0.6 : 1 }}>
+                <button onClick={createProject} disabled={creating} className="btn-neon px-3 py-1.5 text-[11px] font-medium">
                   {creating ? 'Creating...' : 'Create'}
                 </button>
                 <button onClick={() => { setShowNewInput(false); setNewName(''); }} className="px-3 py-1.5 text-[11px] font-medium border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', borderRadius: '4px', background: 'transparent' }}>

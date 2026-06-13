@@ -23,9 +23,9 @@ local toggleBtn = toolbar:CreateButton(PLUGIN_NAME, "Toggle Coconut AI panel", "
 
 -- Colors
 local C = {
-	primary = Color3.fromRGB(20, 184, 166),
-	primaryDark = Color3.fromRGB(13, 148, 136),
-	primaryLight = Color3.fromRGB(45, 212, 191),
+	primary = Color3.fromRGB(255, 107, 53),
+	primaryDark = Color3.fromRGB(220, 80, 30),
+	primaryLight = Color3.fromRGB(255, 140, 90),
 	bg = Color3.fromRGB(248, 250, 250),
 	bgDark = Color3.fromRGB(28, 30, 34),
 	surface = Color3.fromRGB(255, 255, 255),
@@ -35,19 +35,19 @@ local C = {
 	textSec = Color3.fromRGB(120, 113, 108),
 	textSecDark = Color3.fromRGB(168, 162, 158),
 	textMuted = Color3.fromRGB(168, 162, 158),
-	success = Color3.fromRGB(52, 211, 153),
-	error = Color3.fromRGB(248, 113, 113),
-	warning = Color3.fromRGB(251, 191, 36),
+	success = Color3.fromRGB(0, 255, 136),
+	error = Color3.fromRGB(255, 51, 85),
+	warning = Color3.fromRGB(255, 187, 0),
 	border = Color3.fromRGB(230, 225, 220),
 	borderDark = Color3.fromRGB(55, 58, 64),
 	codeBg = Color3.fromRGB(245, 247, 250),
 	-- Type colors
 	typeModel = Color3.fromRGB(99, 102, 241),
 	typeAnim = Color3.fromRGB(236, 72, 153),
-	typeGP = Color3.fromRGB(251, 191, 36),
-	typeUI = Color3.fromRGB(52, 211, 153),
+	typeGP = Color3.fromRGB(255, 187, 0),
+	typeUI = Color3.fromRGB(0, 255, 136),
 	typeScript = Color3.fromRGB(56, 189, 248),
-	typeVFX = Color3.fromRGB(168, 85, 247),
+	typeVFX = Color3.fromRGB(191, 64, 255),
 }
 
 local LIBRARY_TYPES = {
@@ -180,7 +180,7 @@ local headerFrame = ui("Frame", {
 	ui("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, -200, 0, 0) }),
 	local versionLabel = ui("TextLabel", {
 		BackgroundTransparency = 1,
-		Text = "v2.1",
+		Text = "v2.2",
 		TextSize = 10,
 		Font = Enum.Font.GothamMedium,
 		TextColor3 = C.textMuted,

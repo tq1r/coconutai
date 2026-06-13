@@ -3,9 +3,9 @@
 import { useTheme } from './ThemeProvider';
 
 const themes = [
-  { id: 'coconut', label: 'Coconut', icon: '~', desc: 'Warm amber dark', bg: '#0a0a0f', accent: '#d97706' },
-  { id: 'midnight', label: 'Midnight', icon: '*', desc: 'Cool blue dark', bg: '#070712', accent: '#3b82f6' },
-  { id: 'obsidian', label: 'Obsidian', icon: '*', desc: 'Deep purple dark', bg: '#050508', accent: '#a855f7' },
+  { id: 'coconut', label: 'Coconut', icon: '~', desc: 'Neon amber dark' },
+  { id: 'midnight', label: 'Midnight', icon: '*', desc: 'Neon cyan dark' },
+  { id: 'obsidian', label: 'Obsidian', icon: '*', desc: 'Neon purple dark' },
 ];
 
 interface SettingsPanelProps {
@@ -39,7 +39,7 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
                 cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease',
               }}
             >
-              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: t.accent }} />
+              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: 'var(--accent)' }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>{t.label}</div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t.desc}</div>

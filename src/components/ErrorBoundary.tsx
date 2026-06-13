@@ -18,7 +18,7 @@ export default class ErrorBoundary extends Component<{ children: React.ReactNode
         <div className="p-8 text-center text-sand-400">
           <p className="text-4xl mb-4">🥥</p>
           <p className="text-sm">Something went wrong. Check the console for details.</p>
-          <pre className="mt-4 text-xs text-left bg-[#1a1815] p-4 rounded border border-[#2a2620] max-w-xl mx-auto overflow-auto">
+          <pre className="mt-4 text-xs text-left p-4 rounded max-w-xl mx-auto overflow-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
             {this.state.error.message}
           </pre>
           <button onClick={() => { this.setState({ error: null }); window.location.href = '/dashboard'; }}

@@ -29,17 +29,17 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
           <Link href="/" className="flex items-center gap-2.5 no-underline">
             <span className="text-2xl">🥥</span>
-            <span className="text-lg font-bold" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Coconut AI</span>
+            <span className="text-lg font-bold text-gradient-neon">Coconut AI</span>
           </Link>
           <div className="flex items-center gap-4">
             {signedIn ? (
-              <Link href="/projects" className="btn-primary no-underline text-sm" style={{ padding: '8px 18px' }}>
+              <Link href="/projects" className="btn-neon no-underline text-sm" style={{ padding: '8px 18px', textDecoration: 'none' }}>
                 Dashboard
               </Link>
             ) : (
               <>
                 <Link href="/auth/login" className="text-sm font-medium no-underline" style={{ color: 'var(--text-secondary)' }}>Sign In</Link>
-                <Link href="/auth/signup" className="btn-primary no-underline text-sm" style={{ padding: '8px 18px' }}>
+                <Link href="/auth/signup" className="btn-neon no-underline text-sm" style={{ padding: '8px 18px', textDecoration: 'none' }}>
                   Get Started
                 </Link>
               </>
@@ -56,7 +56,7 @@ export default function HomePage() {
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] mb-5" style={{ color: 'var(--text-primary)' }}>
             The AI that{' '}
-            <span className="animate-gradient" style={{ background: 'linear-gradient(135deg, var(--accent), #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span className="animate-gradient text-gradient-neon">
               actually builds
             </span>
             <br />
@@ -67,7 +67,7 @@ export default function HomePage() {
             and syncs directly to Roblox Studio. Talk to it like a developer, not a search engine.
           </p>
           <div className="flex items-center justify-center gap-4">
-            <Link href="/auth/signup" className="btn-primary text-base" style={{ padding: '14px 32px' }}>
+            <Link href="/auth/signup" className="btn-neon text-base" style={{ padding: '14px 32px', textDecoration: 'none' }}>
               Start Building Free
             </Link>
             <a href="#features" className="text-sm font-medium no-underline px-6 py-3.5 rounded-xl border" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
@@ -171,7 +171,7 @@ export default function HomePage() {
                   <li>✦ Studio sync: {tier.studio}</li>
                   {tier.note && <li>✦ {tier.note}</li>}
                 </ul>
-                <Link href="/auth/signup" className="btn-primary text-center no-underline w-full text-sm" style={{ padding: '10px 0' }}>
+                <Link href="/auth/signup" className="btn-neon text-center no-underline w-full text-sm" style={{ padding: '10px 0', textDecoration: 'none' }}>
                   {i === 0 ? 'Get Started Free' : 'Join Premium'}
                 </Link>
               </div>
@@ -186,7 +186,7 @@ export default function HomePage() {
           <div className="text-5xl mb-6">🥥</div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Ready to build something real?</h2>
           <p className="text-lg mb-8" style={{ color: 'var(--text-secondary)' }}>No credit card. No fake AI. Just a tool that actually helps you ship Roblox games.</p>
-          <Link href="/auth/signup" className="btn-primary text-base" style={{ padding: '14px 36px' }}>
+          <Link href="/auth/signup" className="btn-neon text-base" style={{ padding: '14px 36px', textDecoration: 'none' }}>
             Start Building Free &rarr;
           </Link>
         </div>
