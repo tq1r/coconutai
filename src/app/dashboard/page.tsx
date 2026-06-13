@@ -374,6 +374,30 @@ export default function DashboardPage() {
     scheduleSave();
   }
 
+  async function pushToStudio() {
+    if (!pluginCode || pluginCode.trim().length !== 6 || !activeFile) return;
+    try {
+      setPluginStatus('Pushing...');
+      const res = await fetch('/api/plugin/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: pluginCode, script: code, type: 'script', name: activeFile.name }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPluginStatus('Pushed!');
+        toast('Code pushed to Studio', 'success');
+      } else {
+        setPluginStatus('Failed');
+        toast(data.error || 'Push failed', 'error');
+      }
+    } catch {
+      setPluginStatus('Failed');
+      toast('Push to Studio failed', 'error');
+    }
+    setTimeout(() => setPluginStatus(''), 3000);
+  }
+
   const toastClose = useCallback(() => setToastMsg(''), []);
 
   function renderChatMessage(text: string) {
@@ -635,6 +659,9 @@ export default function DashboardPage() {
                   <span className={`w-1.5 h-1.5 rounded-full ${pluginConnected ? 'animate-breathe' : ''}`} style={{ background: pluginConnected ? 'var(--accent)' : 'var(--warning)' }} />
                   Studio
                 </span>
+              )}
+              {pluginCode.trim().length === 6 && pluginConnected && activeFile && (
+                <button onClick={pushToStudio} disabled={pluginStatus === 'Pushing...'} className="btn-neon text-[9px] px-1.5 py-0.5 ml-1" aria-label="Push to Studio">Push</button>
               )}
             </div>
 
