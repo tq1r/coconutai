@@ -120,6 +120,31 @@ export default function DashboardPage() {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory]);
   useEffect(() => { pluginCodeRef.current = pluginCode; }, [pluginCode]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.key === 's') {
+        e.preventDefault();
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        setSaveStatus('saving');
+        fetch('/api/workspace/session', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workspace_name: workspaceName, metadata: { files: filesRef.current } }),
+        })
+          .then(() => setSaveStatus('saved'))
+          .catch(() => setSaveStatus(''));
+      }
+      if (ctrl && e.key === 'n') {
+        e.preventDefault();
+        setShowNewFile(true);
+        setNewFileName('');
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [workspaceName]);
+
   function toast(msg: string, type: 'error' | 'success') {
     setToastMsg(msg); setToastType(type);
   }
@@ -319,6 +344,23 @@ export default function DashboardPage() {
 
   const toastClose = useCallback(() => setToastMsg(''), []);
 
+  function renderChatMessage(text: string) {
+    const parts = text.split(/(```[\s\S]*?```)/g);
+    return parts.map((part, i) => {
+      const codeMatch = part.match(/^```(\w*)\n?([\s\S]*?)```$/);
+      if (codeMatch) {
+        const lang = codeMatch[1] || 'luau';
+        const code = codeMatch[2];
+        return (
+          <pre key={i} className="font-mono text-[10px] whitespace-pre-wrap overflow-x-auto my-1.5 p-2" style={{ background: 'var(--bg-code)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+            {code}
+          </pre>
+        );
+      }
+      return <p key={i} className="text-[11px]" style={{ lineHeight: 1.5, color: 'var(--text-primary)' }}>{part}</p>;
+    });
+  }
+
   // ── Panel content generators ──────────────────────────
 
   function renderExplorerPanel() {
@@ -395,8 +437,8 @@ export default function DashboardPage() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-2.5 h-7 flex-shrink-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>AI Chat</span>
-          <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--accent)', borderColor: 'var(--border-color)' }}>
-            {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="text-[9px] outline-none border px-1 py-0.5 rounded" style={{ background: 'transparent', color: 'var(--accent)', borderColor: 'var(--border-color)' }} aria-label="AI model">
+            {models.map((m) => <option key={m.id} value={m.id} title={m.description}>{m.name}</option>)}
           </select>
         </div>
 
@@ -425,12 +467,12 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
                     <div className="px-2.5 py-1.5" style={{ border: '1px solid var(--border-color)', borderRadius: '4px' }}>
-                      <pre className="whitespace-pre-wrap font-sans text-[11px]" style={{ color: 'var(--text-primary)', lineHeight: 1.45 }}>{msg.text}</pre>
-                        {(msg.text.includes('function') || msg.text.includes('local ')) && (
-                          <button onClick={() => applyCodeFromChat(msg.text)} className="btn-neon mt-2 text-[10px] px-2.5 py-1">
-                            Apply
-                          </button>
-                        )}
+                      {renderChatMessage(msg.text)}
+                      {(msg.text.includes('function') || msg.text.includes('local ')) && (
+                        <button onClick={() => applyCodeFromChat(msg.text)} className="btn-neon mt-2 text-[10px] px-2.5 py-1">
+                          Apply
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -446,7 +488,7 @@ export default function DashboardPage() {
             rows={2}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleGenerate())}
+            onKeyDown={(e) => (e.key === 'Enter' && (e.ctrlKey || e.metaKey || !e.shiftKey)) && (e.preventDefault(), handleGenerate())}
             placeholder="Describe what to build..."
             className="w-full resize-none text-[11px] px-2.5 py-1.5"
             style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', lineHeight: 1.35, outline: 'none' }}
