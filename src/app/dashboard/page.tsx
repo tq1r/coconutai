@@ -307,30 +307,55 @@ export default function DashboardPage() {
   async function handleGenerate() {
     if (!prompt.trim()) { setError('Enter a prompt'); return; }
     setError(''); setIsGenerating(true);
+    const userPrompt = prompt;
+    setPrompt('');
+    const userMsg: ChatMessage = { role: 'user', text: userPrompt };
+    const assistantMsg: ChatMessage = { role: 'assistant', text: '' };
+    setChatHistory((prev) => [...prev, userMsg, assistantMsg]);
     try {
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetch('/api/ai/chat/stream', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, modelId: selectedModel, workspaceName, projectId: activeProjectId, projectName: activeFile?.name, sessionCode: pluginCode }),
+        body: JSON.stringify({ prompt: userPrompt, modelId: selectedModel, workspaceName, projectId: activeProjectId, projectName: activeFile?.name, sessionCode: pluginCode }),
       });
-      const data = await res.json();
-      if (!data?.success) { setError(data?.error || 'Generation failed'); return; }
-      const aiResponse: AIResponse = data.data;
-      setChatHistory((prev) => [...prev, { role: 'user', text: prompt }, { role: 'assistant', text: aiResponse.output }]);
-      setPrompt('');
+      if (!res.ok || !res.body) {
+        const err = await res.json().catch(() => ({ error: 'Stream failed' }));
+        setChatHistory((prev) => [...prev.slice(0, -1)]);
+        setError(err.error || 'Generation failed');
+        setIsGenerating(false);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullOutput = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullOutput += decoder.decode(value, { stream: true });
+        setChatHistory((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = { role: 'assistant', text: fullOutput };
+          return next;
+        });
+      }
+      setChatHistory((prev) => {
+        const next = [...prev];
+        next[next.length - 1] = { role: 'assistant', text: fullOutput };
+        return next;
+      });
       const activeCode = pluginCodeRef.current;
-      if (activeCode.length === 6) {
+      if (activeCode.length === 6 && (fullOutput.includes('function') || fullOutput.includes('local '))) {
         try {
-          const pushName = prompt.slice(0, 60).replace(/\n/g, ' ') || 'AI Generated';
+          const pushName = userPrompt.slice(0, 60).replace(/\n/g, ' ') || 'AI Generated';
           const pushRes = await fetch('/api/plugin/push', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: activeCode, type: 'script', name: pushName, script: aiResponse.output }),
+            body: JSON.stringify({ code: activeCode, type: 'script', name: pushName, script: fullOutput }),
           });
           const pushData = await pushRes.json();
           setPluginStatus(pushData.success ? 'Pushed to Studio' : 'Push failed');
         } catch { setPluginStatus('Push error'); }
         setTimeout(() => setPluginStatus(''), 4000);
       }
-    } catch { setError('Unable to reach AI service.'); } finally { setIsGenerating(false); }
+    } catch { setChatHistory((prev) => [...prev.slice(0, -1)]); setError('Unable to reach AI service.'); } finally { setIsGenerating(false); }
   }
 
   function createFile() {
