@@ -99,6 +99,8 @@ export default function DashboardPage() {
   const [pluginStatus, setPluginStatus] = useState('');
   const [newFileName, setNewFileName] = useState('');
   const [showNewFile, setShowNewFile] = useState(false);
+  const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -338,6 +340,23 @@ export default function DashboardPage() {
     scheduleSave();
   }
 
+  function deleteFile(id: string) {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+    if (activeFileId === id) {
+      const remaining = files.filter((f) => f.id !== id);
+      setActiveFileId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
+    }
+    scheduleSave();
+  }
+
+  function renameFile(id: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed) { setRenamingFileId(null); return; }
+    setFiles((prev) => prev.map((f) => f.id === id ? { ...f, name: trimmed.endsWith('.lua') ? trimmed : trimmed + '.lua' } : f));
+    setRenamingFileId(null);
+    scheduleSave();
+  }
+
   function applyCodeFromChat(codeSnippet: string) {
     if (activeFileId) setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: codeSnippet, updatedAt: new Date().toISOString() } : f));
   }
@@ -413,18 +432,33 @@ export default function DashboardPage() {
             <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-muted)' }}>No files</p>
           ) : (
             files.map((file) => (
-              <button
-                key={file.id}
-                onClick={() => setActiveFileId(file.id)}
-                className="w-full text-left px-3 py-1 text-[11px] transition-all border-0 cursor-pointer flex items-center gap-2"
-                style={{
-                  background: activeFileId === file.id ? 'var(--accent-soft)' : 'transparent',
-                  color: activeFileId === file.id ? 'var(--accent)' : 'var(--text-secondary)',
-                }}
-              >
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>L</span>
-                <span className="truncate">{file.name}</span>
-              </button>
+              <div key={file.id} className="group flex items-center px-3 py-1 text-[11px] transition-all cursor-pointer" style={{
+                background: activeFileId === file.id ? 'var(--accent-soft)' : 'transparent',
+                color: activeFileId === file.id ? 'var(--accent)' : 'var(--text-secondary)',
+              }} onClick={() => { if (renamingFileId !== file.id) setActiveFileId(file.id); }}>
+                <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>L</span>
+                {renamingFileId === file.id ? (
+                  <input
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') renameFile(file.id, renameValue); if (e.key === 'Escape') setRenamingFileId(null); }}
+                    onBlur={() => renameFile(file.id, renameValue)}
+                    className="flex-1 text-[10px] outline-none px-1 py-0 ml-1.5"
+                    style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '2px' }}
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Rename file"
+                  />
+                ) : (
+                  <span className="truncate ml-1.5 flex-1" onDoubleClick={() => { setRenamingFileId(file.id); setRenameValue(file.name.replace(/\.lua$/, '')); }}>{file.name}</span>
+                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteFile(file.id); }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] border-0 cursor-pointer ml-1 px-1 flex-shrink-0"
+                  style={{ color: 'var(--text-muted)' }}
+                  aria-label="Delete file"
+                >x</button>
+              </div>
             ))
           )}
         </div>
