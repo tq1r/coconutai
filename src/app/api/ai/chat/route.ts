@@ -29,7 +29,7 @@ export const POST = withAuth(async (request: NextRequest, context) => {
       typeof sessionCode === 'string' && sessionCode.trim().length > 0 ? sessionCode.trim() : undefined
     );
     return NextResponse.json({ success: true, data: aiResponse }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message ?? 'AI generation failed' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'AI generation failed' }, { status: 500 });
   }
 });

@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, message: 'Logged out successfully' }, { status: 200 });
     response.cookies.delete('coconut-token');
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Logout error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

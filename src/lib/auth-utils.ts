@@ -63,7 +63,7 @@ export function withAuth(
         subscriptionExpiresAt: profile.subscription_expires_at ?? null,
         subscriptionTier: profile.subscription_tier ?? null,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Auth error:', error);
       return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
     }

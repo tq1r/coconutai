@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Password reset instructions sent. (Configure email service for production.)'
     }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Reset password error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
