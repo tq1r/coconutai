@@ -433,7 +433,6 @@ export default function DashboardPage() {
   function confirmApplyCode() {
     if (!pendingCode || !activeFileId) { setPendingCode(null); return; }
     setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: pendingCode, updatedAt: new Date().toISOString() } : f));
-    setFileContent(pendingCode);
     setPendingCode(null);
     scheduleSave();
   }
