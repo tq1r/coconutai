@@ -15,14 +15,14 @@ export default class ErrorBoundary extends Component<{ children: React.ReactNode
   render() {
     if (this.state.error) {
       return this.props.fallback || (
-        <div className="p-8 text-center text-sand-400">
-          <p className="text-4xl mb-4">🥥</p>
+        <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-2xl font-bold mb-4" style={{ color: 'var(--accent)' }}>[!]</p>
           <p className="text-sm">Something went wrong. Check the console for details.</p>
           <pre className="mt-4 text-xs text-left p-4 rounded max-w-xl mx-auto overflow-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
             {this.state.error.message}
           </pre>
           <button onClick={() => { this.setState({ error: null }); window.location.href = '/dashboard'; }}
-            className="mt-4 px-4 py-2 bg-cyan-600 text-white rounded text-sm">
+            className="btn-neon mt-4 text-sm">
             Reload
           </button>
         </div>

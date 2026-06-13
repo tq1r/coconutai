@@ -36,7 +36,7 @@ async function registerCommands() {
 }
 
 client.once(Events.ClientReady, async () => {
-  console.log(`🥥 Coconut AI Bot Online: ${client.user?.tag}`);
+  console.log(`[CA] Coconut AI Bot Online: ${client.user?.tag}`);
   await registerCommands();
 });
 
