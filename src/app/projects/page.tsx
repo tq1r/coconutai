@@ -22,6 +22,7 @@ export default function ProjectsPage() {
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'error' | 'success'>('error');
   const [showMenu, setShowMenu] = useState(false);
+  const [loading, setLoading] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
   function toast(msg: string, type: 'error' | 'success') {
@@ -62,6 +63,7 @@ export default function ProjectsPage() {
       setWorkspaceName(first);
       await fetchProjects(first);
     } catch { toast('Failed to load workspaces', 'error'); }
+    finally { setLoading(false); }
   }
 
   async function fetchProjects(name: string) {
@@ -187,7 +189,19 @@ export default function ProjectsPage() {
             </div>
           )}
 
-          {projects.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 staggered-2">
+              {[1,2,3,4].map((i) => (
+                <div key={i} className="border animate-pulse rounded-sm" style={{ background: 'var(--bg-surface-solid)', borderColor: 'var(--border-color)', padding: '16px 18px' }}>
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-6 h-6 rounded" style={{ background: 'var(--border-color)' }} />
+                    <div className="h-3 flex-1 rounded" style={{ background: 'var(--border-color)' }} />
+                  </div>
+                  <div className="h-2 w-24 rounded" style={{ background: 'var(--border-color)' }} />
+                </div>
+              ))}
+            </div>
+          ) : projects.length === 0 ? (
             <div className="flex flex-col items-center justify-center" style={{ paddingTop: '80px' }}>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No projects yet. Create one to get started.</p>
             </div>

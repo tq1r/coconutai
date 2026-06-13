@@ -630,11 +630,12 @@ export default function DashboardPage() {
                     <p className="text-[9px] font-medium mb-0.5" style={{ color: 'var(--text-muted)' }}>Coconut AI</p>
                     <div className="px-2.5 py-1.5" style={{ border: '1px solid var(--border-color)', borderRadius: '4px' }}>
                       {renderChatMessage(msg.text)}
-                      {(msg.text.includes('function') || msg.text.includes('local ')) && (
-                        <button onClick={() => applyCodeFromChat(msg.text)} className="btn-neon mt-2 text-[10px] px-2.5 py-1">
-                          Apply
-                        </button>
-                      )}
+                      <div className="flex gap-1.5 mt-2">
+                        {(msg.text.includes('function') || msg.text.includes('local ')) && (
+                          <button onClick={() => applyCodeFromChat(msg.text)} className="btn-neon text-[10px] px-2.5 py-1">Apply</button>
+                        )}
+                        <button onClick={() => { const prevMsg = chatHistory[i - 1]?.text || ''; setPrompt(prevMsg); }} className="text-[10px] px-2 py-1 border cursor-pointer" style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)', borderRadius: '4px', background: 'transparent' }}>Regenerate</button>
+                      </div>
                     </div>
                   </div>
                 </div>
