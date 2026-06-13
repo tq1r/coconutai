@@ -3,9 +3,9 @@
 import { useTheme } from './ThemeProvider';
 
 const themes = [
-  { id: 'coconut', label: 'Coconut', icon: '~', desc: 'Neon amber dark' },
-  { id: 'midnight', label: 'Midnight', icon: '*', desc: 'Neon cyan dark' },
-  { id: 'obsidian', label: 'Obsidian', icon: '*', desc: 'Neon purple dark' },
+  { id: 'coconut', label: 'Coconut', colors: ['#ff6b35', '#ff9a5e', '#080806', '#1a0e08'], desc: 'Neon amber dark' },
+  { id: 'midnight', label: 'Midnight', colors: ['#00d4ff', '#4de8ff', '#06060c', '#0a0a1a'], desc: 'Neon cyan dark' },
+  { id: 'obsidian', label: 'Obsidian', colors: ['#bf40ff', '#d47fff', '#040408', '#14041a'], desc: 'Neon purple dark' },
 ];
 
 interface SettingsPanelProps {
@@ -33,13 +33,15 @@ export default function SettingsPanel({ userName, userEmail, userRole, robloxUse
               onClick={() => setTheme(t.id as any)}
               className="animate-slide-up animate-scale-hover"
               style={{
-                display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px',
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px',
                 borderRadius: '6px', border: theme === t.id ? '2px solid var(--accent)' : '1px solid var(--border-color)',
                 background: theme === t.id ? 'var(--accent-soft)' : 'transparent',
                 cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease',
               }}
             >
-              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: 'var(--accent)' }} />
+              <div className="flex flex-shrink-0 gap-[2px]">
+                {t.colors.map((c, i) => <span key={i} className="w-[6px] h-4 rounded-[1px] block" style={{ background: c }} />)}
+              </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>{t.label}</div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t.desc}</div>
