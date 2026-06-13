@@ -103,6 +103,7 @@ export default function DashboardPage() {
   const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [pendingCode, setPendingCode] = useState<string | null>(null);
+  const [fileFilter, setFileFilter] = useState('');
   const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -422,8 +423,26 @@ export default function DashboardPage() {
 
         <div className="flex items-center justify-between px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>SCRIPTS</span>
-          <button onClick={() => { setShowNewFile(!showNewFile); setNewFileName(''); }} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }} aria-label="New file">+</button>
+          <div className="flex items-center gap-1">
+            {files.length > 0 && <button onClick={() => setFileFilter(fileFilter ? '' : 'search')} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }} aria-label="Search files">?</button>}
+            <button onClick={() => { setShowNewFile(!showNewFile); setNewFileName(''); }} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }} aria-label="New file">+</button>
+          </div>
         </div>
+        {fileFilter && (
+          <div className="px-2 py-1 flex gap-1 border-b" style={{ borderColor: 'var(--border-color)' }}>
+            <input
+              value={fileFilter === 'search' ? '' : fileFilter}
+              onChange={(e) => setFileFilter(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') setFileFilter(''); }}
+              placeholder="Filter files..."
+              className="flex-1 text-[10px] outline-none px-1.5 py-0.5"
+              style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+              autoFocus
+              aria-label="Filter files"
+            />
+            <button onClick={() => setFileFilter('')} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)' }}>x</button>
+          </div>
+        )}
         {showNewFile && (
           <div className="px-2 py-1 border-b flex gap-1" style={{ borderColor: 'var(--border-color)' }}>
             <input
@@ -440,7 +459,9 @@ export default function DashboardPage() {
           </div>
         )}
         <div className="flex-1 overflow-y-auto py-0.5">
-          {files.length === 0 ? (
+          {(() => {
+            const filtered = fileFilter && fileFilter !== 'search' ? files.filter((f) => f.name.toLowerCase().includes(fileFilter.toLowerCase())) : files;
+            return filtered.length === 0 ? (
             <p className="text-[10px] text-center mt-6" style={{ color: 'var(--text-muted)' }}>No files</p>
           ) : (
             files.map((file) => (
@@ -472,7 +493,7 @@ export default function DashboardPage() {
                 >x</button>
               </div>
             ))
-          )}
+          )})()}
         </div>
       </div>
     );
