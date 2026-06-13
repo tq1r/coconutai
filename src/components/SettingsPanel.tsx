@@ -6,6 +6,10 @@ const themes = [
   { id: 'coconut', label: 'Coconut', colors: ['#ff6b35', '#ff9a5e', '#080806', '#1a0e08'], desc: 'Neon amber dark' },
   { id: 'midnight', label: 'Midnight', colors: ['#00d4ff', '#4de8ff', '#06060c', '#0a0a1a'], desc: 'Neon cyan dark' },
   { id: 'obsidian', label: 'Obsidian', colors: ['#bf40ff', '#d47fff', '#040408', '#14041a'], desc: 'Neon purple dark' },
+  { id: 'toxic', label: 'Toxic', colors: ['#00ff88', '#66ffb3', '#050a05', '#081a0e'], desc: 'Neon green dark' },
+  { id: 'inferno', label: 'Inferno', colors: ['#ff3355', '#ff6680', '#0a0505', '#1a080a'], desc: 'Neon red dark' },
+  { id: 'gold', label: 'Gold', colors: ['#ffbb00', '#ffd644', '#0a0802', '#1a1404'], desc: 'Neon gold dark' },
+  { id: 'ice', label: 'Ice', colors: ['#4da6ff', '#80bfff', '#02060a', '#06101a'], desc: 'Neon blue dark' },
 ];
 
 interface SettingsPanelProps {
