@@ -104,6 +104,7 @@ export default function DashboardPage() {
   const [renameValue, setRenameValue] = useState('');
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [fileFilter, setFileFilter] = useState('');
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -407,11 +408,14 @@ export default function DashboardPage() {
       if (codeMatch) {
         const lang = codeMatch[1] || 'luau';
         const code = codeMatch[2];
-        return (
-          <pre key={i} className="font-mono text-[10px] whitespace-pre-wrap overflow-x-auto my-1.5 p-2" style={{ background: 'var(--bg-code)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+      return (
+        <div key={i} className="relative group">
+          <pre className="font-mono text-[10px] whitespace-pre-wrap overflow-x-auto my-1.5 p-2" style={{ background: 'var(--bg-code)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-primary)', lineHeight: 1.45 }}>
             {code}
           </pre>
-        );
+          <button onClick={() => { navigator.clipboard.writeText(code); toast('Copied', 'success'); }} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] border-0 cursor-pointer px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-surface-solid)', color: 'var(--accent)' }} aria-label="Copy code">copy</button>
+        </div>
+      );
       }
       return <p key={i} className="text-[11px]" style={{ lineHeight: 1.5, color: 'var(--text-primary)' }}>{part}</p>;
     });
@@ -715,6 +719,7 @@ export default function DashboardPage() {
             <button className="border-0 cursor-pointer text-[11px]" style={{ color: activeTab === 'settings' ? 'var(--accent)' : 'inherit', background: 'none' }} onClick={() => handleTabChange('settings')} aria-label="Show settings panel">[=] Settings</button>
           </div>
           <div className="flex items-center gap-3">
+            <button onClick={() => setShowShortcuts(!showShortcuts)} className="border-0 cursor-pointer text-[11px]" style={{ color: 'var(--text-muted)', background: 'none' }} aria-label="Keyboard shortcuts">?</button>
             {saveStatus && <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{saveStatus === 'saved' ? 'Saved' : 'Saving...'}</span>}
             {pluginCode && (
               <span style={{ color: pluginConnected ? 'var(--accent)' : 'var(--text-muted)' }}>
@@ -729,6 +734,24 @@ export default function DashboardPage() {
           </div>
         </footer>
       </div>
+      {showShortcuts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setShowShortcuts(false)}>
+          <div className="p-4 rounded" style={{ background: 'var(--bg-surface-solid)', border: '1px solid var(--border-color)', minWidth: '220px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>Keyboard Shortcuts</span>
+              <button onClick={() => setShowShortcuts(false)} className="text-[9px] border-0 cursor-pointer" style={{ color: 'var(--text-muted)', background: 'none' }}>x</button>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {[['Ctrl+S', 'Save'], ['Ctrl+N', 'New file'], ['Ctrl+Enter', 'Send chat'], ['Esc', 'Close dialogs / cancel'], ['?', 'Toggle shortcuts']].map(([keys, desc]) => (
+                <div key={keys} className="flex items-center justify-between text-[10px]">
+                  <span style={{ color: 'var(--text-muted)' }}>{desc}</span>
+                  <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-editor)', border: '1px solid var(--border-color)', color: 'var(--accent)', fontFamily: 'monospace' }}>{keys}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {toastMsg && <Toast message={toastMsg} type={toastType} onClose={toastClose} />}
     </ErrorBoundary>
   );
