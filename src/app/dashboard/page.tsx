@@ -101,6 +101,7 @@ export default function DashboardPage() {
   const [showNewFile, setShowNewFile] = useState(false);
   const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [pendingCode, setPendingCode] = useState<string | null>(null);
   const pluginCodeRef = useRef(pluginCode);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -358,7 +359,15 @@ export default function DashboardPage() {
   }
 
   function applyCodeFromChat(codeSnippet: string) {
-    if (activeFileId) setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: codeSnippet, updatedAt: new Date().toISOString() } : f));
+    setPendingCode(codeSnippet);
+  }
+
+  function confirmApplyCode() {
+    if (!pendingCode || !activeFileId) { setPendingCode(null); return; }
+    setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content: pendingCode, updatedAt: new Date().toISOString() } : f));
+    setFileContent(pendingCode);
+    setPendingCode(null);
+    scheduleSave();
   }
 
   const toastClose = useCallback(() => setToastMsg(''), []);
@@ -588,6 +597,7 @@ export default function DashboardPage() {
               <button onClick={() => router.push('/projects')} className="border-0 cursor-pointer font-medium px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Projects</button>
               <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>/</span>
               <span className="font-medium truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>{activeFile?.name || 'untitled.lua'}</span>
+              {pendingCode && <span className="text-[9px] px-1 py-0.5 rounded" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Preview</span>}
               <div className="flex-1" />
               <select value={workspaceName} onChange={(e) => {
                 setWorkspaceName(e.target.value);
@@ -606,8 +616,16 @@ export default function DashboardPage() {
 
             {/* Code Editor */}
             <div className="flex-1 flex flex-col overflow-hidden" style={{ padding: '6px' }}>
+              {pendingCode && (
+                <div className="flex items-center gap-2 px-2.5 py-1 mb-1 text-[10px]" style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: '4px', color: 'var(--text-secondary)' }}>
+                  <span style={{ color: 'var(--accent)' }}>Code generated</span>
+                  <span className="flex-1" />
+                  <button onClick={confirmApplyCode} className="btn-neon text-[9px] px-2 py-0.5">Apply</button>
+                  <button onClick={() => setPendingCode(null)} style={{ color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border-color)', borderRadius: '2px', cursor: 'pointer', padding: '1px 6px' }}>x</button>
+                </div>
+              )}
               <div className="flex-1 flex flex-col overflow-hidden border" style={{ background: 'var(--bg-editor)', borderColor: 'var(--border-color)', borderRadius: '4px' }}>
-                <EditorPanel code={code} onChange={handleCodeChange} activeFile={activeFile} />
+                <EditorPanel code={pendingCode || code} onChange={handleCodeChange} activeFile={activeFile} />
               </div>
             </div>
           </main>
